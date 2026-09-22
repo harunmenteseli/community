@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useSetAtom } from 'jotai';
+import { Github } from 'lucide-react';
 import { loginSchema, type LoginDto } from '@community/shared';
 import { Button } from '../../components/ui/button';
 import { Field } from '../../components/ui/field';
@@ -31,7 +32,7 @@ export function LoginPage() {
     setFormError(null);
     try {
       const result = await authApi.login(values);
-      setSession({ token: result.token, user: result.user });
+      setSession({ token: result.token, sessionId: result.session.id, user: result.user });
       toast.success('Hoş geldin!');
       await navigate({ to: '/' });
     } catch (err) {
@@ -86,6 +87,17 @@ export function LoginPage() {
 
         <Button type="submit" size="lg" full loading={pending}>
           Giriş yap
+        </Button>
+
+        <div className="flex items-center gap-3 text-xs text-ink-400 dark:text-ink-500">
+          <span className="h-px flex-1 bg-ink-200 dark:bg-ink-800" />
+          veya
+          <span className="h-px flex-1 bg-ink-200 dark:bg-ink-800" />
+        </div>
+
+        <Button type="button" variant="outline" size="lg" full onClick={() => (window.location.href = '/api/auth/github')}>
+          <Github className="h-4 w-4" />
+          GitHub ile devam et
         </Button>
       </form>
     </AuthShell>

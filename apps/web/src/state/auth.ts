@@ -8,17 +8,22 @@ export interface SessionUser extends UserPublic {
 
 export interface AuthState {
   token: string | null;
+  sessionId: string | null;
   user: SessionUser | null;
 }
 
 export function readAuthState(): AuthState {
   try {
     const raw = localStorage.getItem(TOKEN_STORAGE_KEY);
-    if (!raw) return { token: null, user: null };
+    if (!raw) return { token: null, sessionId: null, user: null };
     const parsed = JSON.parse(raw) as Partial<AuthState>;
-    return { token: typeof parsed.token === 'string' ? parsed.token : null, user: parsed.user ?? null };
+    return {
+      token: typeof parsed.token === 'string' ? parsed.token : null,
+      sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : null,
+      user: parsed.user ?? null,
+    };
   } catch {
-    return { token: null, user: null };
+    return { token: null, sessionId: null, user: null };
   }
 }
 

@@ -112,3 +112,13 @@
 - Düzeltmeler: `vite.config.ts` `test` bloğu (vitest/config vite5/vite6 tip çakışmasına yol açtı → `UserConfig` cast); Header'da olmayan `asChild` kullanımı temizlendi.
 - Doğrulama: `pnpm --filter @community/web typecheck` ✅, `build` ✅ (PWA generateSW dahil), dev 5173'te çalışıyor; 5173 → 3000 proxy test edildi (yanlış kimlikle 401 INVALID_CREDENTIALS Türkçe mesaj).
 - Commit: `#1` (Web auth akışı). Sıradaki: S-1 kalanı (#2) — session yönetimi UI (oturum süresi/revoke) + GitHub OAuth bağlama; sonra S-2 (#3) post editor.
+
+## 2026-09-23 — Durum (S-1 tamam #2: session yönetimi + GitHub OAuth, smoke geçti)
+
+- App bootstrap: `state/bootstrap.ts` — main.tsx render öncesi `await bootstrapAuth()`; localStorage'daki token ile `/api/auth/me` çekilir, 401 ise oturum temizlenir (network hatasında korunur). `createStore` (jotai) render dışı güncelleme için.
+- `sessionId` artık istemci saklama katmanında (auth.ts/atoms.ts); login/register yanıtındaki `session.id` kaydedilir → "bu cihaz" rozeti mümkün.
+- `/settings/security` (Şifre & Güvenlik): `GET /api/auth/sessions` listesi (ip + cihaz adı + tarih), tekil `POST /sessions/:id/revoke`, `POST /sessions/revoke-all` (mevcut hariç), girişsiz görünümde "Giriş gerekli". Giriş yoksa UI yönlendirme bekler.
+- GitHub OAuth: LoginPage'de "GitHub ile devam et" (→ `/api/auth/github`), callback `/auth/oauth/github` fragment `#token=` → url temizlenir → `applyOAuthToken` ile `/api/auth/me` → oturum → `/`. (Not: mevcut hesaba `githubUsername` **bağlama** backend'de state desteği yok; profil kartı GitHub rozeti S-4 ile birlikte yapılacak.)
+- `Button`'a `full` prop'u mevcut; Login/Register setSession'a sessionId eklendi.
+- Doğrulama: typecheck ✅ build ✅; uçtan uca (proxy üzerinden): register → `sessions` listesi (ip/UA) → tekil revoke → `/me` 401 (token öldü) ✅.
+- Commit: `#2`. Sıradaki: S-2 (#3) post editor (draft, poll, görsel) + (#4) feed akışı web tarafı.

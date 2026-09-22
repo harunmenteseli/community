@@ -31,7 +31,7 @@ export function RegisterPage() {
     setFormError(null);
     try {
       const result = await authApi.register(values);
-      setSession({ token: result.token, user: result.user });
+      setSession({ token: result.token, sessionId: result.session.id, user: result.user });
       toast.success('Hesabın oluşturuldu!');
       await navigate({ to: '/' });
     } catch (err) {

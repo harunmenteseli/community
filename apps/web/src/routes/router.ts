@@ -2,11 +2,13 @@ import { createRootRoute, createRoute, createRouter, type Router } from '@tansta
 import { RootLayout } from '../components/layout/RootLayout';
 import { HomePage } from '../pages/HomePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { SecurityPage } from '../pages/SecurityPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { RegisterPage } from '../features/auth/RegisterPage';
 import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { VerifyEmailPage } from '../features/auth/VerifyEmailPage';
+import { GithubOAuthCallbackPage } from '../features/auth/GithubOAuthCallbackPage';
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -48,6 +50,18 @@ const verifyEmailRoute = createRoute({
   component: VerifyEmailPage,
 });
 
+const securityRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/settings/security',
+  component: SecurityPage,
+});
+
+const githubOAuthRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/auth/oauth/github',
+  component: GithubOAuthCallbackPage,
+});
+
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '*',
@@ -61,6 +75,8 @@ const routeTree = rootRoute.addChildren([
   forgotPasswordRoute,
   resetPasswordRoute,
   verifyEmailRoute,
+  securityRoute,
+  githubOAuthRoute,
   notFoundRoute,
 ]);
 

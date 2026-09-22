@@ -32,6 +32,17 @@ export const authApi = {
     http.post<{ success: true }>('/api/auth/forgot-password', forgotPasswordSchema.parse(input)),
   resetPassword: (token: string, password: string) =>
     http.post<{ success: true }>('/api/auth/reset-password', resetPasswordSchema.parse({ token, password })),
+  sessions: () => http.get<{ sessions: SessionInfo[] }>('/api/auth/sessions'),
+  revokeSession: (sessionId: string) => http.post<{ success: true }>(`/api/auth/sessions/${sessionId}/revoke`),
+  revokeAllSessions: () => http.post<{ success: true }>('/api/auth/sessions/revoke-all'),
 };
+
+export interface SessionInfo {
+  id: string;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  expiresAt: string;
+}
 
 export type { AuthResponse, UserPublic };

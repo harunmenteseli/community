@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { Toaster } from 'sonner';
 import { router } from './routes/router';
+import { bootstrapAuth } from './state/bootstrap';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,9 +30,11 @@ function App() {
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
-  createRoot(rootElement).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
+  void bootstrapAuth().finally(() => {
+    createRoot(rootElement).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  });
 }
