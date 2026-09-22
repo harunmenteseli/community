@@ -82,15 +82,18 @@
 
 > G√ºncellenecek. Her tamamlanan issue buraya `#id ‚úî` eklenir.
 
-- [ ] S-0 ba≈ülandƒ± ‚Äî repo init, plan
-## 2026-09-22 ó Durum (S-0 tamamland˝, smoke test geÁti)
-- Ortam: Docker (pg 5433 / redis 6380, b2b Áak˝˛mas˝ nedeniyle portlar dei˛ti), migration uyguland˝.
-- D¸zeltilen hatalar:
+- [x] S-0 tamamlandƒ± ‚Äî repo init, monorepo, API √ßekirdeƒüi, design system temeli, smoke test
+
+## 2026-09-22 ‚Äî Durum (S-0 tamamlandƒ±, smoke test ge√ßti)
+
+- Ortam: Docker (pg 5433 / redis 6380, b2b √ßakƒ±≈ümasƒ± nedeniyle portlar deƒüi≈üti), migration uygulandƒ±.
+- D√ºzeltilen hatalar:
   1. esbuild default-param TDZ: `constructor(private readonly db: DB = db)` -> `(db: DB)` + `new XxxService(db)` (7 servise).
-  2. zod v4: `.partial()` refinement iÁeren schema'da Áal˝˛m˝yor -> `z.object(shape).partial()`.
+  2. zod v4: `.partial()` refinement i√ßeren schema'da √ßalƒ±≈ümƒ±yor -> `z.object(shape).partial()`.
   3. @fastify/multipart 8 -> 9 (Fastify 5).
-  4. Session imzas˝ `hash(rawToken)` ¸zerindeydi ama ham token istemciye verilmiyordu -> `hash(sessionId)` ¸zerine kuruldu; vermede expiresAt kontrol¸ eklendi.
-  5. Feed/listDrafts `Promise.all` eksikti (map async dˆn¸yordu).
-- Dorulanan uÁlar: register, login, session guard, post olu˛turma, feed (cursor), post detay, like, bookmark, yorum (olu˛tur/iste), proje olu˛turma, profil, auth/me, notifications/unread-count.
-- Blokeler: gh auth yok (GitHub repo/issue kurulamad˝), Resend/Anthropic/GitHub OAuth key'leri placeholder (.env'e girilmedi).
-- S˝radaki: web frontend (main.tsx, router, api client, auth store, app shell, feed + editor), sonra GitHub repo + issue'lar.
+  4. Session imzasƒ± `hash(rawToken)` √ºzerindeydi ama ham token istemciye verilmiyordu -> `hash(sessionId)` √ºzerine kuruldu; vermede expiresAt kontrol√º eklendi.
+  5. Feed/listDrafts `Promise.all` eksikti (map async d√∂n√ºyordu).
+- Doƒürulanan u√ßlar: register, login, session guard, post olu≈üturma, feed (cursor), post detay, like, bookmark, yorum (olu≈ütur/iste), proje olu≈üturma, profil, auth/me, notifications/unread-count.
+- GitHub: harunmenteseli/community (public), development default branch, ilk commit push edildi, 8 milestone (S-1..S-8) + 17 issue (**#1..#17**) olu≈üturuldu.
+- Blokeler: Resend/Anthropic/GitHub OAuth key'leri placeholder (.env'e girilmedi).
+- Sƒ±radaki: web frontend (main.tsx, router, api client, auth store, app shell, feed + editor).
