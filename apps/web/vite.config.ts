@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
+const config: UserConfig = {
   plugins: [
     react(),
     tailwindcss(),
@@ -40,4 +40,6 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
   },
-});
+} as UserConfig;
+
+export default defineConfig(config);

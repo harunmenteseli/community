@@ -97,3 +97,18 @@
 - GitHub: harunmenteseli/community (public), development default branch, ilk commit push edildi, 8 milestone (S-1..S-8) + 17 issue (**#1..#17**) oluşturuldu.
 - Blokeler: Resend/Anthropic/GitHub OAuth key'leri placeholder (.env'e girilmedi).
 - Sıradaki: web frontend (main.tsx, router, api client, auth store, app shell, feed + editor).
+
+## 2026-09-23 — Durum (S-1 web auth akışı #1, typecheck+build+smoke geçti)
+
+- Web uygulaması ilk olarak ayağa kaldırıldı: `main.tsx`, `index.html`, favicon, `<body>`/root, providers (QueryClient + sonner Toaster + tema init).
+- TanStack Router v1 manuel route tree (`routes/router.ts`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`, `*` (404). Root layout + Header (auth durumuna göre giriş/kayıt vs avatar+çıkış) + Footer eklendi.
+- Auth çekirdeği:
+  - `lib/api.ts` — fetch wrapper + `ApiError` (API'nin Türkçe `message`'ını hataya taşır), token'ı localStorage okur.
+  - `state/auth.ts` + `state/atoms.ts` — jotai atomları (authStateAtom, userAtom, setSessionAtom, clearSessionAtom), token `community.auth` anahtarında `{token, user}`.
+  - `lib/validation.ts` — zod v4 + RHF için özel `zodResolver` (zod4 issue kodları → Türkçe mesajlar). @hookform/resolvers v3'ün zod4 desteği güvenilmez olduğu için elle yazıldı.
+  - `features/auth/api.ts` — register/login/me/logout/verify-email/resend-verification/forgot/reset (shared zod schema'ları ile parse).
+- Sayfalar: Login, Register (ad/kullanıcı adı/e-posta/şifre), VerifyEmail (URL'den token, otomatik doğrula), ForgotPassword (resi gönder + 30s cooldown), ResetPassword (token + şifre doğrulama), `features/auth/AuthShell` ortak kart/brand bileşeni.
+- `Button`'a `full` değil — size/loading var; Header ve HomePage mevcut UI ile render ediliyor.
+- Düzeltmeler: `vite.config.ts` `test` bloğu (vitest/config vite5/vite6 tip çakışmasına yol açtı → `UserConfig` cast); Header'da olmayan `asChild` kullanımı temizlendi.
+- Doğrulama: `pnpm --filter @community/web typecheck` ✅, `build` ✅ (PWA generateSW dahil), dev 5173'te çalışıyor; 5173 → 3000 proxy test edildi (yanlış kimlikle 401 INVALID_CREDENTIALS Türkçe mesaj).
+- Commit: `#1` (Web auth akışı). Sıradaki: S-1 kalanı (#2) — session yönetimi UI (oturum süresi/revoke) + GitHub OAuth bağlama; sonra S-2 (#3) post editor.
