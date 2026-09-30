@@ -191,7 +191,8 @@ export function NewPostPage() {
       <div className="container-page flex flex-col items-center py-24 text-center">
         <h1 className="text-xl font-semibold">Giriş gerekli</h1>
         <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Paylaşım yapabilmek için önce giriş yapmalısın.</p>
-        <Link to="/login" className="mt-5">
+        {/* Giriş sonrası bu sayfaya geri dönülsün. */}
+        <Link to="/login" search={{ redirect: '/post/yeni' }} className="mt-5">
           <Button variant="primary">Giriş yap</Button>
         </Link>
       </div>

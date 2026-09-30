@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useSetAtom } from 'jotai';
 import { loginSchema, type LoginDto } from '@community/shared';
@@ -11,14 +11,23 @@ import { authApi } from './api';
 import { setSessionAtom } from '../../state/atoms';
 import { zodResolver } from '../../lib/validation';
 import { ApiError } from '../../lib/api';
+import { useRedirectTarget } from './useRedirectTarget';
 
 type LoginForm = LoginDto;
 
 export function LoginPage() {
   const navigate = useNavigate();
   const setSession = useSetAtom(setSessionAtom);
-  const [pending, setPending] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const redirectTo = useRedirectTarget();
+
+  const login = useMutation({
+    mutationFn: (values: LoginForm) => authApi.login(values),
+    onSuccess: async (result) => {
+      setSession({ token: result.token, sessionId: result.session.id, user: result.user });
+      toast.success('Hoş geldin!');
+      await navigate({ to: redirectTo });
+    },
+  });
 
   const {
     register,
@@ -26,20 +35,9 @@ export function LoginPage() {
     formState: { errors },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) as never });
 
-  const onSubmit = handleSubmit(async (values) => {
-    setPending(true);
-    setFormError(null);
-    try {
-      const result = await authApi.login(values);
-      setSession({ token: result.token, sessionId: result.session.id, user: result.user });
-      toast.success('Hoş geldin!');
-      await navigate({ to: '/' });
-    } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Bir şeyler ters gitti');
-    } finally {
-      setPending(false);
-    }
-  });
+  const onSubmit = handleSubmit((values) => login.mutate(values));
+
+  const formError = login.error instanceof ApiError ? login.error.message : 'Bir şeyler ters gitti';
 
   return (
     <AuthShell
@@ -55,7 +53,7 @@ export function LoginPage() {
       }
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        {formError ? (
+        {login.isError ? (
           <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
             {formError}
           </p>
@@ -84,7 +82,7 @@ export function LoginPage() {
           </Link>
         </div>
 
-        <Button type="submit" size="lg" full loading={pending}>
+        <Button type="submit" size="lg" full loading={login.isPending}>
           Giriş yap
         </Button>
       </form>

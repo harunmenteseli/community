@@ -27,6 +27,8 @@ const homeRoute = createRoute({
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
+  // validateSearch tanimlanmiyor: redirect param'ini useRedirectTarget ham
+  // searchStr'den okuyor ve boylece linklerde search vermek zorunlu olmuyor.
   component: LoginPage,
 });
 

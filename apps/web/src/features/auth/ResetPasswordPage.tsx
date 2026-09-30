@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Field } from '../../components/ui/field';
@@ -26,8 +26,6 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const token = new URLSearchParams(location.searchStr ?? '').get('token');
-  const [pending, setPending] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -35,23 +33,25 @@ export function ResetPasswordPage() {
     formState: { errors },
   } = useForm<ResetForm>({ resolver: zodResolver(resetFormSchema) as never });
 
-  const onSubmit = handleSubmit(async (values) => {
-    if (!token) {
-      setFormError('Sıfırlama linki geçersiz.');
-      return;
-    }
-    setPending(true);
-    setFormError(null);
-    try {
-      await authApi.resetPassword(token, values.password);
+  const reset = useMutation({
+    mutationFn: (password: string) => authApi.resetPassword(token ?? '', password),
+    onSuccess: async () => {
       toast.success('Şifren güncellendi');
       await navigate({ to: '/login' });
-    } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Bir şeyler ters gitti');
-    } finally {
-      setPending(false);
-    }
+    },
   });
+
+  const onSubmit = handleSubmit((values) => {
+    if (!token) return;
+    reset.mutate(values.password);
+  });
+
+  const formError =
+    !token || !reset.isError
+      ? null
+      : reset.error instanceof ApiError
+        ? reset.error.message
+        : 'Bir şeyler ters gitti';
 
   return (
     <AuthShell
@@ -59,7 +59,7 @@ export function ResetPasswordPage() {
       subtitle="Kullanıcı adın veya e-postanla kimliğini doğruladık."
       footer={
         <>
-          <Link to="/login" className="font-medium text-accent-600 dark:text-accent-400">
+          <Link to="/login" search={{ redirect: '/feed' }} className="font-medium text-accent-600 dark:text-accent-400">
             Giriş yap
           </Link>
         </>
@@ -92,7 +92,7 @@ export function ResetPasswordPage() {
             {...register('confirm')}
           />
 
-          <Button type="submit" size="lg" full loading={pending}>
+          <Button type="submit" size="lg" full loading={reset.isPending}>
             Şifremi güncelle
           </Button>
         </form>

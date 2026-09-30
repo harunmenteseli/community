@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
 import { forgotPasswordSchema, type ForgotPasswordDto } from '@community/shared';
 import { Button } from '../../components/ui/button';
 import { Field } from '../../components/ui/field';
@@ -13,8 +14,6 @@ type ForgotForm = ForgotPasswordDto;
 
 export function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   const {
@@ -36,30 +35,22 @@ export function ForgotPasswordPage() {
     }, 1000);
   };
 
-  const send = async (email: string) => {
-    setFormError(null);
-    await authApi.forgotPassword({ email });
-    startCooldown();
-  };
-
-  const onSubmit = handleSubmit(async (values) => {
-    setPending(true);
-    setFormError(null);
-    try {
-      await send(values.email);
+  const sendLink = useMutation({
+    mutationFn: (email: string) => authApi.forgotPassword({ email }),
+    onSuccess: () => {
       setSent(true);
-    } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Bir şeyler ters gitti');
-    } finally {
-      setPending(false);
-    }
+      startCooldown();
+    },
   });
 
-  const onResend = async () => {
+  const onSubmit = handleSubmit((values) => sendLink.mutate(values.email));
+
+  const onResend = () => {
     if (resendCooldown > 0) return;
-    const email = handleSubmit(async (values) => send(values.email))();
-    await email;
+    void handleSubmit((values) => sendLink.mutate(values.email))();
   };
+
+  const formError = sendLink.error instanceof ApiError ? sendLink.error.message : 'Bir şeyler ters gitti';
 
   return (
     <AuthShell
@@ -79,13 +70,13 @@ export function ForgotPasswordPage() {
           <p className="text-sm text-ink-600 dark:text-ink-300">
             Sıfırlama linkini e-posta adresine gönderdik. E-posta kutunu kontrol et.
           </p>
-          <Button variant="secondary" onClick={onResend} disabled={resendCooldown > 0}>
+          <Button variant="secondary" onClick={onResend} disabled={resendCooldown > 0 || sendLink.isPending}>
             {resendCooldown > 0 ? `${resendCooldown}s sonra tekrar dene` : 'Tekrar gönder'}
           </Button>
         </div>
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-          {formError ? (
+          {sendLink.isError ? (
             <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
               {formError}
             </p>
@@ -100,7 +91,7 @@ export function ForgotPasswordPage() {
             {...register('email')}
           />
 
-          <Button type="submit" size="lg" full loading={pending}>
+          <Button type="submit" size="lg" full loading={sendLink.isPending}>
             Sıfırlama linki gönder
           </Button>
         </form>

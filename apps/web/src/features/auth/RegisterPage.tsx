@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useSetAtom } from 'jotai';
 import { registerSchema, type RegisterDto } from '@community/shared';
@@ -11,35 +11,33 @@ import { authApi } from './api';
 import { setSessionAtom } from '../../state/atoms';
 import { zodResolver } from '../../lib/validation';
 import { ApiError } from '../../lib/api';
+import { useRedirectTarget } from './useRedirectTarget';
 
 type RegisterForm = RegisterDto;
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const setSession = useSetAtom(setSessionAtom);
-  const [pending, setPending] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const redirectTo = useRedirectTarget();
+
+  const register = useMutation({
+    mutationFn: (values: RegisterForm) => authApi.register(values),
+    onSuccess: async (result) => {
+      setSession({ token: result.token, sessionId: result.session.id, user: result.user });
+      toast.success('Hesabın oluşturuldu!');
+      await navigate({ to: redirectTo });
+    },
+  });
 
   const {
-    register,
+    register: registerField,
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterForm>({ resolver: zodResolver(registerSchema) as never });
 
-  const onSubmit = handleSubmit(async (values) => {
-    setPending(true);
-    setFormError(null);
-    try {
-      const result = await authApi.register(values);
-      setSession({ token: result.token, sessionId: result.session.id, user: result.user });
-      toast.success('Hesabın oluşturuldu!');
-      await navigate({ to: '/' });
-    } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : 'Bir şeyler ters gitti');
-    } finally {
-      setPending(false);
-    }
-  });
+  const onSubmit = handleSubmit((values) => register.mutate(values));
+
+  const formError = register.error instanceof ApiError ? register.error.message : 'Bir şeyler ters gitti';
 
   return (
     <AuthShell
@@ -55,7 +53,7 @@ export function RegisterPage() {
       }
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        {formError ? (
+        {register.isError ? (
           <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
             {formError}
           </p>
@@ -66,7 +64,7 @@ export function RegisterPage() {
           autoComplete="name"
           placeholder="Adın"
           error={errors.name}
-          {...register('name')}
+          {...registerField('name')}
         />
         <Field
           label="Kullanıcı adı"
@@ -74,7 +72,7 @@ export function RegisterPage() {
           placeholder="ornek_kullanici"
           hint="Harf, rakam ve alt çizgi — en az 3 karakter"
           error={errors.username}
-          {...register('username')}
+          {...registerField('username')}
         />
         <Field
           label="E-posta"
@@ -82,7 +80,7 @@ export function RegisterPage() {
           autoComplete="email"
           placeholder="ornek@site.com"
           error={errors.email}
-          {...register('email')}
+          {...registerField('email')}
         />
         <Field
           label="Şifre"
@@ -90,10 +88,10 @@ export function RegisterPage() {
           autoComplete="new-password"
           placeholder="En az 8 karakter"
           error={errors.password}
-          {...register('password')}
+          {...registerField('password')}
         />
 
-        <Button type="submit" size="lg" full loading={pending}>
+        <Button type="submit" size="lg" full loading={register.isPending}>
           Kayıt ol
         </Button>
       </form>
