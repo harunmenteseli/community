@@ -53,7 +53,7 @@ export class NotificationsService {
     events.emit('notification:new', { recipientId: input.recipientId, notification: inserted[0] });
   }
 
-  async list(userId: string, cursor?: string, requestedLimit = 20) {
+  async list(userId: string, cursor?: string, requestedLimit = 20, unreadOnly = false) {
     const limit = Math.min(Math.max(requestedLimit, 1), 50);
     const offset = cursor ? Number(cursor) : 0;
 
@@ -73,7 +73,11 @@ export class NotificationsService {
       })
       .from(notifications)
       .leftJoin(users, eq(users.id, notifications.actorId))
-      .where(eq(notifications.recipientId, userId))
+      .where(
+        unreadOnly
+          ? and(eq(notifications.recipientId, userId), isNull(notifications.readAt))
+          : eq(notifications.recipientId, userId),
+      )
       .orderBy(sql`${notifications.createdAt} desc`)
       .limit(limit + 1)
       .offset(offset);
@@ -108,7 +112,7 @@ export class NotificationsService {
 
   async markAllRead(userId: string): Promise<void> {
     await this.db.update(notifications).set({ readAt: new Date() }).where(eq(notifications.recipientId, userId));
-    events.emit('notification:read', { recipientId: userId });
+    events.emit('notification:read', { recipientId: userId, count: 0 });
   }
 
   async markRead(userId: string, id: string): Promise<void> {
@@ -116,6 +120,10 @@ export class NotificationsService {
       .update(notifications)
       .set({ readAt: new Date() })
       .where(and(eq(notifications.id, id), eq(notifications.recipientId, userId)));
+    // Tek bildirim okunduğunda da rozet tazelenmeliydi: aksi halde baska
+    // sekme/cihazda okunmamis sayaci eski kalirdi.
+    const count = await this.unreadCount(userId);
+    events.emit('notification:read', { recipientId: userId, count });
   }
 }
 

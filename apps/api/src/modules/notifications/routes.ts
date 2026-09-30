@@ -8,8 +8,13 @@ import { notificationsService } from './service';
 export async function registerNotifications(app: FastifyInstance): Promise<void> {
   app.get('/api/notifications', async (request) => {
     const { id } = request.requireAuthUser();
-    const { cursor, limit } = request.query as { cursor?: string; limit?: string };
-    return notificationsService.list(id, cursor, limit ? Number(limit) : 20);
+    const { cursor, limit, filter } = request.query as { cursor?: string; limit?: string; filter?: string };
+    return notificationsService.list(
+      id,
+      cursor,
+      limit ? Number(limit) : 20,
+      filter === 'unread',
+    );
   });
 
   app.get('/api/notifications/unread-count', async (request) => {

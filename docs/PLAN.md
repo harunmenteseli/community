@@ -600,3 +600,63 @@ ull
 - check.bat yesil, 111 unit test (35 shared + 25 api + 51 web) ve 100 e2e test
   gecti.
 - Commit: #10. Siradaki: #11.
+
+## 2026-09-30 - Durum (#11 tamamlandi)
+
+### Yapilanlar
+
+- **Socket.IO istemcisi** (`useRealtimeNotifications`): `RootLayout` icinde
+  token varsa baglanir, cikisinda soketi kapatir. `notification:new` →
+  bildirim listesinin basina ekler, okunmamis sayacini artirir, toaster gosterir;
+  `notifications:unread` → sayaci sunucudan gelen degerle hizalar. Adres her
+  zaman ayni origin (vite proxy /socket.io'yu API'ye yonlendiriyor).
+- **Bildirim rozeti** (`NotificationBell`): header'da zil + okunmamis rozeti
+  (`99+` kirpmasi), oturumsuzda hic render edilmiyor. Ilk deger HTTP'den,
+  sonraki guncellemeler soketten gelir.
+- **Bildirim merkezi** (`/bildirimler`): Tümü / Okunmamış sekmeleri (filtre
+  sunucuda `?filter=unread` ile), sayfalama ("Daha fazla"), tek bildirimi
+  okundu isaretleme (satır veya bağlantıya tıklayınca), "Tümünü okundu
+  işaretle", boş durumlar, okunmamış satır vurgusu, oturumsuz giriş çağrısı.
+- **Bildirim metinleri** (`features/notifications/format.ts`): sunucu sadece
+  tip/aktör gönderiyor; okunabilir metin ve yönlendirme istemcide üretiliyor
+  (`follow`, `like`, `comment`, `reply`, `mention`, `launch`, `reportUpdate`).
+- Backend: `GET /api/notifications?filter=unread`, tek bildirim okunduğunda
+  `notification:read` olayı **kalan sayacı** taşıyor (önce hiç yayınlanmıyordu,
+  diğer sekmede rozet eski kalıyordu).
+- Backend: canlı bildirim payload'ı listedeki şekle hizalandı (aktör bilgisi
+  eklendi); toaster aksi halde "Sistem gönderini beğendi" diyordu.
+
+### Duzeltilen hatalar
+
+- **WS handshake CORS ile reddediliyordu**: `env.APP_URL` şeması `z.string().url()`
+  ile tek origin doğruluyor, kod ise `env.APP_URL.split(',')` ile liste bekliyordu.
+  Çoklu origin sessizce bozuktu (e2e'de soket hiç bağlanamıyordu). Şema artık
+  virgülle ayrılmış origin listesini doğruluyor ve liste olarak dışa veriyor.
+- **Soket el sıkışmasında token biçimi yanlıştı**: istemci `auth: { token }`
+  ile prefixesiz token gönderiyor, sunucu ise `Bearer <token>` bekliyordu →
+  her bağlantı "unauthorized" ile kapanıyordu, bildirimler hiç canlı gelmiyordu.
+- `playwright.config.ts` → e2e API'sine `APP_URL` veriliyor: WebSocket
+  handshake'te tarayici daima `Origin` başlığı gönderiyor, `/api` istekleri
+  ise proxy'den aynı origin olarak gidiyor.
+- Tek bildirim okununca rozet diğer sekmede sıfırlanmıyordu (sadece "tümünü
+  okundu" olayı yayınlanıyordu).
+
+### Testler
+
+- Yeni: `e2e/notifications.spec.ts` (4 test) - soket bağlantısı beklenir,
+  başka kullanıcı takip ettiğinde **sayfa yenilenmeden** rozet 1 olur ve
+  toaster görünür; merkezden tek bildirim okununca rozet söner, "Tümü"
+  listesinde kalır ve "Okunmamış" sekmesinden çıkar; iki bildirimle filtre +
+  "Tümünü okundu işaretle" akışı; `filter=unread` API'si ve unread-count
+  tutarlılığı; oturumsuz erişim (sayfa uyarısı + 401).
+- Yeni unit testler: `format.test.ts` (metin/bağlantı üretimi, bilinmeyen tip),
+  `prepend.test.ts` (cache yaması, tekrar eklememe, bozuk cache koruması).
+- Canlı testler deterministik olsun diye soket bağlantı durumu
+  `window.__communityRealtime` altında tutuluyor; olay, soket bağlı değilken
+  sessizce kaçırıldığı için test önce bağlantıyı bekliyor.
+
+### Sonuc
+
+- check.bat yeşil, 121 unit test (35 shared + 25 api + 61 web) ve 104 e2e test
+  geçti.
+- Commit: #11. Sıradaki: #12 (ayarlar sayfaları).

@@ -7,6 +7,7 @@ import { BrandMark } from '../../features/auth/AuthShell';
 import { Avatar } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { authApi } from '../../features/auth/api';
+import { NotificationBell } from '../../features/notifications/NotificationBell';
 import { ApiError } from '../../lib/api';
 
 export function Header() {
@@ -46,6 +47,7 @@ export function Header() {
           </Link>
           {user ? (
             <>
+              <NotificationBell />
               <Link to="/vitrin" className="hidden text-sm font-medium hover:underline sm:inline">
                 Vitrin
               </Link>

@@ -7,6 +7,10 @@ const WEB_URL = `http://127.0.0.1:${WEB_PORT}`;
 const apiEnv = {
   PORT: String(API_PORT),
   API_URL: `http://127.0.0.1:${API_PORT}`,
+  // WebSocket handshake'te tarayici daima Origin basligi gonderir; API'nin CORS
+  // listesi e2e web originini icermiyorsa soket baglantisi reddedilir.
+  // (/api istekleri ayni origin proxy'den gectigi icin Origin'siz gider.)
+  APP_URL: `${WEB_URL},http://127.0.0.1:${API_PORT}`,
   // CI'da bunlar job seviyesindeki env'den gelir ve child process'e miras kalir.
   // Lokal calistirmada tanimli degilse API kendi .env dosyasini okur.
   ...(process.env.DATABASE_URL ? { DATABASE_URL: process.env.DATABASE_URL } : {}),

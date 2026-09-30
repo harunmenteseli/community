@@ -17,6 +17,7 @@ import { EditProfilePage } from '../pages/EditProfilePage';
 import { ShowcasePage } from '../pages/ShowcasePage';
 import { ProjectFormPage } from '../pages/ProjectFormPage';
 import { CareerShowcasePage } from '../pages/CareerShowcasePage';
+import { NotificationsPage } from '../pages/NotificationsPage';
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -127,6 +128,12 @@ const editProjectRoute = createRoute({
   component: ProjectFormPage,
 });
 
+const notificationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/bildirimler',
+  component: NotificationsPage,
+});
+
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '*',
@@ -151,6 +158,7 @@ const routeTree = rootRoute.addChildren([
   newProjectRoute,
   editProjectRoute,
   careerShowcaseRoute,
+  notificationsRoute,
   notFoundRoute,
 ]);
 

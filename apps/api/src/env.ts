@@ -5,7 +5,24 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   PORT: z.coerce.number().int().default(3000),
   API_URL: z.string().url().default('http://localhost:3000'),
-  APP_URL: z.string().url().default('http://localhost:5173'),
+  // Virgulle ayrilmis origin listesi: CORS'a hem HTTP hem WebSocket handshake
+  // icin gecer. Once tek URL dogruluyordu, liste ise sessizce calismiyordu.
+  APP_URL: z
+    .string()
+    .default('http://localhost:5173')
+    .transform((value) => value.split(',').map((origin) => origin.trim()).filter(Boolean))
+    .refine(
+      (origins) =>
+        origins.length > 0 &&
+        origins.every((origin) => {
+          try {
+            return Boolean(new URL(origin).origin);
+          } catch {
+            return false;
+          }
+        }),
+      { message: 'APP_URL virgulle ayrilmis gecerli origin listesi olmali' },
+    ),
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().default('redis://localhost:6379'),
   RESEND_API_KEY: z.string().optional(),

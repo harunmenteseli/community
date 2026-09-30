@@ -33,7 +33,7 @@ export async function buildApp(options: BuildOptions = {}): Promise<FastifyInsta
   });
 
   await app.register(cors, {
-    origin: env.APP_URL.split(',').map((o) => o.trim()),
+    origin: env.APP_URL,
     credentials: true,
   });
 

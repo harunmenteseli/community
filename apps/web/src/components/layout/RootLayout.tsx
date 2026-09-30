@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet } from '@tanstack/react-router';
+import { useRealtimeNotifications } from '../../features/notifications/useRealtimeNotifications';
 import { Header } from './Header';
 
 function getInitialTheme(): 'dark' | 'light' {
@@ -17,6 +18,12 @@ export function RootLayout() {
     const theme = getInitialTheme();
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, []);
+
+  // Oturum varsa socket.io baglantisi acilir; bildirimler rozet ve toaster'a
+  // duser. Baglanti ayni origin uzerinden kurulur (vite proxy /socket.io'yu
+  // API'ye yonlendirir; uretimde reverse proxy ayni yolu actigi icin ek
+  // konfigurasyon gerekmez).
+  useRealtimeNotifications();
 
   return (
     <div className="flex min-h-dvh flex-col bg-white text-ink-900 dark:bg-ink-950 dark:text-ink-100">

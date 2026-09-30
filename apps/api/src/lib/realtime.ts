@@ -38,7 +38,7 @@ async function authenticate(token?: string): Promise<string | null> {
 
 export function attachRealtime(httpServer: HttpServer, _app: FastifyInstance): void {
   const io = new Server(httpServer, {
-    cors: { origin: env.APP_URL.split(',').map((o) => o.trim()), credentials: true },
+    cors: { origin: env.APP_URL, credentials: true },
     transports: ['websocket', 'polling'],
   });
 
@@ -78,21 +78,40 @@ export function attachRealtime(httpServer: HttpServer, _app: FastifyInstance): v
     });
   });
 
-  events.on('notification:new', ({ recipientId, notification }) => {
+  // Canli bildirim, listedeki sekille ayni olmali: list sorgusu aktoru kullanici
+  // tablosuyla birlestiriyor, socket payload'i ise ham satir. Aksi halde toaster
+  // "Sistem gonderini begendi" gibi aktorsuz metin gosterirdi.
+  events.on('notification:new', async ({ recipientId, notification }) => {
     const socketIds = userSockets.get(recipientId as string);
     if (!socketIds) return;
+
+    const payload = (await withActor(notification)) as Record<string, unknown>;
     for (const id of socketIds) {
-      io.to(id).emit('notification:new', notification);
+      io.to(id).emit('notification:new', payload);
     }
   });
 
-  events.on('notification:read', ({ recipientId }) => {
+  events.on('notification:read', ({ recipientId, count }) => {
     const socketIds = userSockets.get(recipientId as string);
     if (!socketIds) return;
     for (const id of socketIds) {
-      io.to(id).emit('notifications:unread', { count: 0 });
+      io.to(id).emit('notifications:unread', { count });
     }
   });
 
   logger.info('Socket.IO realtime hazır');
+}
+
+/** Bildirim satirindaki actorId icin kisa kullanici bilgisi ekler. */
+async function withActor(notification: unknown): Promise<unknown> {
+  const row = notification as { actorId?: string | null } | null;
+  if (!row || typeof row !== 'object' || !row.actorId) return notification;
+
+  const actor = await db
+    .select({ id: users.id, username: users.username, name: users.name, avatarUrl: users.avatarUrl })
+    .from(users)
+    .where(eq(users.id, row.actorId))
+    .limit(1);
+
+  return { ...row, actor: actor[0] ?? null };
 }
