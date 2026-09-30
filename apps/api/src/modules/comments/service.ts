@@ -153,7 +153,7 @@ export class CommentsService {
       }
     }
 
-    return this.mapComment(created!, authorId);
+    return this.mapComment(created!);
   }
 
   async delete(commentId: string, userId: string): Promise<void> {
@@ -169,7 +169,7 @@ export class CommentsService {
     await this.db.delete(comments).where(eq(comments.id, commentId));
   }
 
-  private async mapComment(c: { id: string; content: string; createdAt: Date; updatedAt: Date; parentId: string | null; authorId: string }, requesterId?: string): Promise<CommentWithMeta> {
+  private async mapComment(c: { id: string; content: string; createdAt: Date; updatedAt: Date; parentId: string | null; authorId: string }): Promise<CommentWithMeta> {
     const author = (await this.db.select().from(users).where(eq(users.id, c.authorId)).limit(1))[0]!;
     return {
       id: c.id,

@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { DB } from '../../db';
 import { db } from '../../db';
 import {
@@ -8,10 +8,10 @@ import {
   pollVotes,
   postLikes,
   bookmarks,
-  users,
 } from '../../db/schema';
 import type { CreatePostDto, UpdatePostDto } from '@community/shared';
-import { POST_CATEGORIES, POST_GAMES, POST_CONTENT_MAX } from '@community/shared';
+import type { POST_CATEGORIES, POST_GAMES } from '@community/shared';
+import { POST_CONTENT_MAX } from '@community/shared';
 import { errors } from '../../lib/errors';
 import { events } from '../../lib/events';
 import { notificationsService } from '../notifications/service';

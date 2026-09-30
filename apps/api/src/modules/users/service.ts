@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { DB } from '../../db';
 import { db } from '../../db';
 import { users, follows, reports, posts, comments } from '../../db/schema';
-import type { UpdateProfileDto, ChangePasswordDto, UpdateUsernameDto } from '@community/shared';
+import type { UpdateProfileDto } from '@community/shared';
 import { errors, isUniqueViolation } from '../../lib/errors';
 import argon2 from 'argon2';
 

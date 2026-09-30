@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { projectsService } from '../projects/service';
 import { launchpadService } from './service';
 import { db } from '../../db';
-import { projects, users } from '../../db/schema';
+import { users } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { errors } from '../../lib/errors';
 

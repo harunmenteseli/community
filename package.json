@@ -19,5 +19,8 @@
     "db:generate": "pnpm --filter @community/api db:generate",
     "db:migrate": "pnpm --filter @community/api db:migrate",
     "db:studio": "pnpm --filter @community/api db:studio"
+  },
+  "devDependencies": {
+    "typescript-eslint": "8.18.0"
   }
 }

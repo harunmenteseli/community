@@ -1,5 +1,5 @@
 import type { FieldValues, Resolver, ResolverOptions, ResolverResult } from 'react-hook-form';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 interface ZodIssueLike {
   code: string;

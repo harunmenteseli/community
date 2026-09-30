@@ -79,7 +79,6 @@ export function ImageAttachments({ images, onChange, disabled }: ImageAttachment
         <ul className="grid grid-cols-3 gap-3 sm:grid-cols-5">
           {images.map((image, index) => (
             <li key={image.url} className="group relative aspect-square overflow-hidden rounded-lg border border-ink-200 dark:border-ink-800">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image.url} alt="" className="h-full w-full object-cover" />
               <div className="absolute inset-0 flex flex-col justify-between bg-ink-950/0 p-1 transition-colors group-hover:bg-ink-950/40">
                 <div className="flex justify-end gap-1">

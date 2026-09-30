@@ -1,7 +1,6 @@
 import fp from 'fastify-plugin';
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { FastifyBaseLogger } from 'fastify/types/logger';
-import { and, eq, gt, gte, isNull } from 'drizzle-orm';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import { sessions, users } from '../db/schema';
 import { hashToken, verifySessionSignature } from '../lib/crypto';

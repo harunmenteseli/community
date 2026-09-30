@@ -2,7 +2,6 @@ import {
   pgTable,
   uuid,
   varchar,
-  text,
   timestamp,
   boolean,
   integer,
@@ -10,7 +9,6 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
-import { projects } from './projects';
 
 export const notifications = pgTable(
   'notifications',

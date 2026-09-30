@@ -148,7 +148,7 @@ export function NewPostPage() {
         toast.error('Yayınlamak için içerik gerekli');
         return;
       }
-      const { post } = await postsApi.create(body);
+      await postsApi.create(body);
       if (draftIdRef.current) {
         try {
           await postsApi.delete(draftIdRef.current);
@@ -358,7 +358,6 @@ export function NewPostPage() {
           {images.length ? (
             <div className="grid grid-cols-5 gap-2">
               {images.map((image) => (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img key={image.url} src={image.url} alt="" className="aspect-square w-full rounded-lg object-cover" />
               ))}
             </div>

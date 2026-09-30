@@ -136,3 +136,42 @@
 - `Button`'a `full` prop'u mevcut; Login/Register setSession'a sessionId eklendi.
 - Doğrulama: typecheck ✅ build ✅; uçtan uca (proxy üzerinden): register → `sessions` listesi (ip/UA) → tekil revoke → `/me` 401 (token öldü) ✅.
 - Commit: `#2`. Sıradaki: S-2 (#3) post editor (draft, poll, görsel) + (#4) feed akışı web tarafı.
+
+## 2026-09-30 - Durum (Windows .bat scriptleri + kalite altyapisi onarildi)
+
+- Root seviyede 9 adet `.bat` eklendi: `_common.bat`, `setup.bat`, `start.bat`, `start-api.bat`,
+  `start-web.bat`, `stop.bat`, `migrate.bat`, `check.bat`, `test.bat`. Hepsi gercekten calistirilip
+  dogrulandi (API `/health` ok, web 200, proxy 400/401Turkce hata mesajlari dogru).
+- Windows batch gotchasi: baska dosyadaki label`a `call :label` ile erisilemez. `_common.bat` bir
+  dispatcher oldu; cagiranlar `call "%ROOT%\_common.bat" :etiket args` kullaniyor.
+- ANSI renk kodlari .bat`ta guvenilir degil (ESC karakteri duz metne donusuyordu), isaretler
+  duz metne cevrildi: `[OK]`, `[!]`, `[HATA]`, `=== adim ===`.
+- `findstr /R` ile `/C` birlikte kullanilamiyor; port kontrolu `findstr /L` ile yazildi.
+  Bu yuzden `stop.bat` portlari kapatmiyordu; duzeltildi ve dogrulandi.
+
+### Lint/build altyapisi onarildi (#16)
+
+- `lint` hic calismiyordu: `eslint` binary`si sadece `apps/web` vardi, `@community/config`
+  `typescript-eslint` import ediyordu ama paket hic kurulmamisti, ve hicbir paketin de
+  `eslint.config.js` dosyasi yoktu. Kurutuldu: workspace root`a `typescript-eslint`, `api` ve
+  `shared` paketlerine `eslint`, ucunun de `eslint.config.js` dosyasi.
+- Ardindan lint gercek hatalari buldu ve duzeltildi (13 hata): kullanilmayan import`lar
+  (`boolean`, `text`, `projects`, `users`, `isNull`, `gte`, `FastifyReply`,
+  `FastifyBaseLogger`, `ChangePasswordDto`, `UpdateUsernameDto`, `requesterId`),
+  `consistent-type-imports` ihlalleri, ve projede Next.js olmadigi icin `@next/next/no-img-element`
+  yorum satirlari.
+- `build` de hic calismiyordu: `tsup` kurulu degildi ve `tsup.config.ts` yoktu. Eklendi.
+- `pnpm-workspace.yaml` icindeki `allowBuilds` degerleri `set this to true or false` gibi
+  placeholder metinlerdi; gercek boolean`lara cevrildi, boylece esbuild postinstall calisiyor.
+
+### Testler (#16)
+
+- Vitest yapilandirmasi hic yoktu ve test dosyasi yoktu. Eklendi: `apps/api/vitest.config.ts`
+  (+ `test/setup.ts` ortam degiskenleri), `packages/shared/vitest.config.ts`,
+  `apps/web` icin `test` script`i (vitest zaten `vite.config.ts` icinde yapilandirilmis).
+- 59 unit test yazildi: API 25 (crypto, errors, pagination), shared 21 (schemas),
+  web 13 (cn, auth state). Hepsi gecti.
+- `check.bat` (typecheck + lint + build) ve `test.bat` tamamen yesil.
+
+- Commit: `#16`. Siradaki: #16`in kalan kismi (Playwright e2e + GitHub Actions CI), sonra
+  #5 feed sayfasi.
