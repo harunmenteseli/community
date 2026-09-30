@@ -3,7 +3,7 @@ import { projectsService } from '../projects/service';
 import { launchpadService } from './service';
 import { db } from '../../db';
 import { users } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { errors } from '../../lib/errors';
 
 export async function registerLaunchpad(app: FastifyInstance): Promise<void> {
@@ -11,7 +11,13 @@ export async function registerLaunchpad(app: FastifyInstance): Promise<void> {
     const { sort, cursor, limit } = request.query as { sort?: 'yeni' | 'puan'; cursor?: string; limit?: string };
     const viewerId = request.authUser?.id;
     const result = await projectsService.listLaunched(viewerId, sort, cursor, limit ? Number(limit) : 12);
-    return result;
+    // Liste yanitinda da sahip bilgisi gerekiyor: kartta yazar linki ve
+    // "kendi kaydimi vitrinden kaldir" butonu bu bilgiye bakiyor.
+    const owners = await loadOwners(result.projects);
+    return {
+      projects: result.projects.map((project) => ({ ...project, owner: owners.get(project.userId) ?? null })),
+      nextCursor: result.nextCursor,
+    };
   });
 
   app.get<{ Params: { id: string } }>('/api/launchpad/:id', async (request) => {
@@ -59,3 +65,22 @@ export async function registerLaunchpad(app: FastifyInstance): Promise<void> {
     return launchpadService.listFeedback(request.params.id, cursor, limit ? Number(limit) : 20);
   });
 }
+
+/** Proje sahiplerini tek sorguda getirir; liste kartlarinda yazar gosterimi icin. */
+async function loadOwners(projects: { userId: string }[]) {
+  const ids = [...new Set(projects.map((project) => project.userId))];
+  if (ids.length === 0) return new Map<string, OwnerRow>();
+  const rows = await db
+    .select({ id: users.id, username: users.username, name: users.name, avatarUrl: users.avatarUrl, bio: users.bio })
+    .from(users)
+    .where(inArray(users.id, ids));
+  return new Map(rows.map((row) => [row.id, row]));
+}
+
+type OwnerRow = {
+  id: string;
+  username: string;
+  name: string;
+  avatarUrl: string | null;
+  bio: string | null;
+};

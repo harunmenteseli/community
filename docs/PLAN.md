@@ -479,3 +479,71 @@ ull
 - check.bat yesil (typecheck + lint + build), 96 unit test (35 shared + 25 api +
   36 web) ve 84 e2e test gecti.
 - Commit: #8. Siradaki: #9 (Kariyer Vitrini akisi).
+
+## 2026-09-30 - Durum (#9 tamamlandi)
+
+### Yapilanlar
+
+- `/kariyer-vitrini` akisi (`CareerShowcasePage.tsx`): yayindaki vitrin
+  kayitlari, "Yeni" / "Popüler" siralamasi (tab, `role="tab"`), infinite scroll +
+  "Daha fazla goster", kart basina kapak gorseli, logo, kategori, aciklama,
+  buildWith etiketleri, yazar linki, ortalama puan (10'lu gosterim) ve yorum
+  sayaci.
+- "Yorum & Puan" modal (`FeedbackModal.tsx`): 1-10 yildiz puan girisi,
+  yorum alani (max 1000 karakter), mevcut feedback ile form on doldurma,
+  "Son yorumlar" listesi, oturumsuz kullanicida giris uyarisi. Basarili
+  gonderimde kart ve liste cache'i invalidate edilir.
+- Sahibi olan kayitlarda kart uzerinde "Vitrinden kaldir" butonu
+  (`POST /api/launchpad/:id/unlaunch`), yine de `/vitrin` ekranindan
+  duzenleme ile geri yayina alinabiliyor.
+- API katmani (`apps/web/src/features/launchpad/api.ts`): liste (sort/cursor/
+  limit), detay, feedback, launch/unlaunch.
+- Header'a "Kariyer Vitrini" baglantisi eklendi.
+
+### Duzeltilen hatalar
+
+- **Puan olcegi issue ile uyumsuzdu**: API 1-5 araligini kabul ediyordu,
+  issue 1-10 diyor. Servis 1-10 araligina ve tam sayi kontrolune gecirildi
+  (ondalik puan kabul edilmiyor).
+- **"yeni" siralamasinda sayfalama bozuktu**: `listLaunched` cursor'u `yeni`
+  dalinda hic dikkate almiyor, `nextCursor` hep `'1'` donuyordu; "daha fazla"
+  ayni ilk sayfayi tekrar getiriyordu. Her iki dalda da offset tabanli
+  sayfalama ve gecersiz cursor'da ilk sayfaya dusulmesi eklendi.
+- **Liste yanitinda sahip bilgisi yoktu**: `GET /api/launchpad` yalnizca proje
+  satirlarini donuyordu, `owner` sadece detay ucunda vardi; bu yuzden kartta
+  yazar linki ve "Vitrinden kaldir" butonu hic render edilemiyordu. Tek sorguda
+  sahip haritasi (batch `inArray`) eklenip her kayda `owner` eklendi.
+- **Feedback yorumlari sayfayi cokertiyordu**: API `listFeedback` sonucu
+  yazari `author` altinda donuyor, web tarafi `user` okuyordu; ilk yorumdan
+  sonra `Cannot read properties of undefined (reading 'avatarUrl')` ile error
+  boundary devreye giriyordu. Web tipleri API sozlesmesiyle hizalandi.
+- **Puan onaylamasi geri aliniyordu**: modal acildiktan sonra gelen arka plan
+  refetch'i (invalidate) formu yeniden dolduruyor, kullaniciyi yaptigi secimi
+  sessizce geri aliyordu. On dolgu `useRef` ile "bir kez" kilitlendi.
+
+### Testler
+
+- Yeni: `e2e/launchpad.spec.ts` (8 test) - yayindaki/taslak ayrimi, "yeni" ve
+  "populer" siralamasi, 1-10 puan + yorum gonderimi (ortalama ve sayaç
+  guncellemesi), puan guncellemesinin mevcut feedback'i guncellemesi, oturumsuz
+  giris uyarisi, sahibin vitrinden kaldirip geri eklemesi, API 400 (0 ve 11),
+  401, 404, kendi projesine puan yasagi, cursor ile sayfalama (tekrarlanan kayit
+  yok, sonunda null) ve gecersiz cursor davranisi.
+- `e2e/fixtures.ts` -> `profileStat(page, label)` yardimcisi eklendi. #7'den
+  kalan `getByText('Vitrin').locator('..').getByText('1')` yazimi aslinda
+  kullanici adi ya da "tarihinden beri uye" metnine denk gelip yanlis geciyordu
+  ve zamanlamaya bagli olarak strict mode violation'a donusuyordu; ayni sorun
+  `getByRole('link', { name: 'Giriş yap' })` icin de vardi (Header + profil
+  cagrisi), `main` icinde kapsam daraltildi.
+- Testler ayni veritabanini paylastigi icin vitrin kartlarinin adlari
+  `uniqueName()` ile benzersizlestirildi; sayfalama testi mutlak kayit sayisina
+  degil "sayfalar tekrarlamiyor ve cursor null'a donuyor" kontrolune bakiyor.
+- Toast uzerinden senkronizasyon yapilmadi: sonner toast'i birkac saniye
+  gorunur kaldigi icin eski toast'a bakan assertion'lar yeni istek commit
+  olmadan API okumasi yapabiliyordu; kart uzerindeki ortalama kullanildi.
+
+### Sonuc
+
+- check.bat yesil (typecheck + lint + build), 96 unit test (35 shared + 25 api +
+  36 web) ve 92 e2e test gecti.
+- Commit: #9. Siradaki: #10 (takip/takipten cik + sikayet UI).

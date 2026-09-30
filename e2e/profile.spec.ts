@@ -1,4 +1,4 @@
-import { createAccount, expect, signInViaUi, test } from './fixtures';
+import { createAccount, expect, profileStat, signInViaUi, test } from './fixtures';
 
 test.describe('profil sayfasi', () => {
   test('profil bilgileri ve istatistikler gorunur', async ({ page, api }) => {
@@ -16,8 +16,8 @@ test.describe('profil sayfasi', () => {
     await expect(page.getByRole('link', { name: 'example.com' })).toHaveAttribute('href', 'https://example.com');
 
     // Istatistikler: post, vitrin, takipci, takip
-    await expect(page.getByText('Takipçi').locator('..').getByText('0')).toBeVisible();
-    await expect(page.getByText('Post').locator('..').getByText('0')).toBeVisible();
+    await expect(profileStat(page, 'Takipçi')).toHaveText('0');
+    await expect(profileStat(page, 'Post')).toHaveText('0');
   });
 
   test('post sayacı yayınlanan postu yansitir', async ({ page, api }) => {
@@ -29,7 +29,7 @@ test.describe('profil sayfasi', () => {
     expect(created.status()).toBe(201);
 
     await page.goto(`/u/${account.username}`);
-    await expect(page.getByText('Post').locator('..').getByText('1')).toBeVisible();
+    await expect(profileStat(page, 'Post')).toHaveText('1');
   });
 
   test('kendi profilinde takip butonu yok, duzenleme var', async ({ page, api }) => {
@@ -55,7 +55,7 @@ test.describe('profil sayfasi', () => {
 
     // Optimistic: dugme aninda "Takiptesin" oluyor, sayac 1.
     await expect(page.getByRole('button', { name: 'Takiptesin' })).toBeVisible();
-    await expect(page.getByText('Takipçi').locator('..').getByText('1')).toBeVisible();
+    await expect(profileStat(page, 'Takipçi')).toHaveText('1');
 
     // Kalici mi: API dogrula.
     const check = await api.get(`/api/users/${author.username}`, {
@@ -65,7 +65,7 @@ test.describe('profil sayfasi', () => {
 
     await page.getByRole('button', { name: 'Takiptesin' }).click();
     await expect(page.getByRole('button', { name: 'Takip et' })).toBeVisible();
-    await expect(page.getByText('Takipçi').locator('..').getByText('0')).toBeVisible();
+    await expect(profileStat(page, 'Takipçi')).toHaveText('0');
 
     const after = await api.get(`/api/users/${author.username}`, {
       headers: { Authorization: `Bearer ${follower.token}` },
@@ -77,7 +77,8 @@ test.describe('profil sayfasi', () => {
     const account = await createAccount(api, 'profil');
 
     await page.goto(`/u/${account.username}`);
-    await expect(page.getByRole('link', { name: 'Giriş yap' })).toBeVisible();
+    // Header'daki "Giriş yap" linki ile profil kartindaki cagriyi ayirt et.
+    await expect(page.getByRole('main').getByRole('link', { name: 'Giriş yap' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Takip et' })).toHaveCount(0);
   });
 

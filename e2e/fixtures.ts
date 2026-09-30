@@ -18,6 +18,16 @@ export const test = base.extend<{ api: APIRequestContext }>({
 
 export { expect };
 
+/**
+ * Profil istatistik degerini deterministik sekilde okur.
+ * Stat markup'i `<div><dt>Etiket</dt><dd>Deger</dd></div>` seklinde; eski
+ * `getByText('Vitrin').locator('..')` yazimi kullanici adi ya da "tarihinden
+ * beri uye" metnine denk gelip yanlis geciyordu.
+ */
+export function profileStat(page: import('@playwright/test').Page, label: string) {
+  return page.locator('dt', { hasText: new RegExp(`^${label}$`) }).locator('xpath=following-sibling::dd[1]');
+}
+
 export const E2E_PASSWORD = 'E2eParola123!';
 
 export function uniqueUsername(prefix = 'e2e'): string {

@@ -25,7 +25,10 @@ export class LaunchpadService {
   }
 
   async feedback(projectId: string, userId: string, input: FeedbackInput): Promise<void> {
-    if (input.rating < 1 || input.rating > 5) throw errors.badRequest('Puan 1-5 arası olmalı');
+    // Issue #9: puan 1-10 araliginda alinir.
+    if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 10) {
+      throw errors.badRequest('Puan 1-10 arasında olmalı');
+    }
 
     const project = await this.db.select().from(projects).where(eq(projects.id, projectId)).limit(1);
     const found = project[0];

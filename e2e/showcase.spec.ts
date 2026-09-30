@@ -1,4 +1,4 @@
-import { createAccount, expect, signInViaUi, test } from './fixtures';
+import { createAccount, expect, profileStat, signInViaUi, test } from './fixtures';
 
 const PNG_1PX = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==',
@@ -56,7 +56,7 @@ test.describe('vitrin kaydi CRUD', () => {
 
     // Profilde vitrin sayaci 1; ancak taslak kayit herkese acik degil
     await page.goto(`/u/${account.username}`);
-    await expect(page.getByText('Vitrin').locator('..').getByText('1')).toBeVisible();
+    await expect(profileStat(page, 'Vitrin')).toHaveText('1');
     await expect(page.getByRole('main').getByText('Henüz vitrin kaydı yok.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Sınav Çalışıcı' })).toHaveCount(0);
 

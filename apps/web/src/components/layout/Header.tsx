@@ -41,6 +41,9 @@ export function Header() {
           <Link to="/feed" className="hidden text-sm font-medium hover:underline sm:inline">
             Feed
           </Link>
+          <Link to="/kariyer-vitrini" className="hidden text-sm font-medium hover:underline sm:inline">
+            Kariyer Vitrini
+          </Link>
           {user ? (
             <>
               <Link to="/vitrin" className="hidden text-sm font-medium hover:underline sm:inline">

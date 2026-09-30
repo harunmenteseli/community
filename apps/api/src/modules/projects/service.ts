@@ -98,28 +98,29 @@ export class ProjectsService {
   async listLaunched(viewerId: string | undefined, sort: 'yeni' | 'puan' = 'yeni', cursor?: string, limit = 12) {
     void viewerId;
     const take = Math.min(Math.max(limit, 1), 30);
+    const parsed = cursor === undefined ? 0 : Number(cursor);
+    const offset = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 
-    if (sort === 'puan') {
-      const offset = cursor ? Number(cursor) : 0;
-      const rows = await this.db
-        .select()
-        .from(projects)
-        .where(eq(projects.launched, true))
-        .orderBy(desc(projects.avgRating), desc(projects.ratingCount), desc(projects.createdAt))
-        .limit(take + 1)
-        .offset(offset);
-      const hasMore = rows.length > take;
-      return { projects: await Promise.all(rows.slice(0, take).map((r) => this.hydrate(r))), nextCursor: hasMore ? String(offset + take) : null };
-    }
+    // Her iki siralamada da offset tabanli sayfalama: 'yeni' dalinda cursor
+    // hic dikkate alinmiyordu ve "daha fazla" ayni sayfayi tekrar getiriyordu.
+    const orderBy =
+      sort === 'puan'
+        ? [desc(projects.avgRating), desc(projects.ratingCount), desc(projects.createdAt)]
+        : [desc(projects.createdAt)];
 
     const rows = await this.db
       .select()
       .from(projects)
       .where(eq(projects.launched, true))
-      .orderBy(desc(projects.createdAt))
-      .limit(take + 1);
+      .orderBy(...orderBy)
+      .limit(take + 1)
+      .offset(offset);
+
     const hasMore = rows.length > take;
-    return { projects: await Promise.all(rows.slice(0, take).map((r) => this.hydrate(r))), nextCursor: hasMore ? '1' : null };
+    return {
+      projects: await Promise.all(rows.slice(0, take).map((r) => this.hydrate(r))),
+      nextCursor: hasMore ? String(offset + take) : null,
+    };
   }
 
   private async getOwned(projectId: string, userId: string) {

@@ -16,6 +16,7 @@ import { ProfilePage } from '../pages/ProfilePage';
 import { EditProfilePage } from '../pages/EditProfilePage';
 import { ShowcasePage } from '../pages/ShowcasePage';
 import { ProjectFormPage } from '../pages/ProjectFormPage';
+import { CareerShowcasePage } from '../pages/CareerShowcasePage';
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -108,6 +109,12 @@ const showcaseRoute = createRoute({
   component: ShowcasePage,
 });
 
+const careerShowcaseRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/kariyer-vitrini',
+  component: CareerShowcasePage,
+});
+
 const newProjectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/vitrin/yeni',
@@ -143,6 +150,7 @@ const routeTree = rootRoute.addChildren([
   showcaseRoute,
   newProjectRoute,
   editProjectRoute,
+  careerShowcaseRoute,
   notFoundRoute,
 ]);
 
