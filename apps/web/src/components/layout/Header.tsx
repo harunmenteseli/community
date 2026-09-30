@@ -15,9 +15,8 @@ export function Header() {
   const navigate = useNavigate();
 
   const onLogout = async () => {
-    const previous = { token: null, user: null };
-    void previous;
-    clearSession();
+    // Once sunucuya bildir: token localStorage'dan silinince istek yetkisiz gider
+    // ve oturum veritabaninda aktif kalir.
     try {
       await authApi.logout();
     } catch (err) {
@@ -25,7 +24,8 @@ export function Header() {
         toast.error('Çıkış yapılırken bir hata oluştu');
       }
     }
-    await navigate({ to: '/' });
+    clearSession();
+    await navigate({ to: '/feed' });
     toast.success('Çıkış yapıldı');
   };
 
