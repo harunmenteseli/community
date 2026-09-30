@@ -43,6 +43,9 @@ export function Header() {
           </Link>
           {user ? (
             <>
+              <Link to="/vitrin" className="hidden text-sm font-medium hover:underline sm:inline">
+                Vitrin
+              </Link>
               <Link to="/post/yeni">
                 <Button variant="outline" size="sm">
                   <PenSquare className="h-4 w-4" />

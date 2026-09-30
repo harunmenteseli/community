@@ -14,6 +14,8 @@ import { FeedPage } from '../pages/FeedPage';
 import { PostDetailPage } from '../pages/PostDetailPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { EditProfilePage } from '../pages/EditProfilePage';
+import { ShowcasePage } from '../pages/ShowcasePage';
+import { ProjectFormPage } from '../pages/ProjectFormPage';
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -100,6 +102,24 @@ const editProfileRoute = createRoute({
   component: EditProfilePage,
 });
 
+const showcaseRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/vitrin',
+  component: ShowcasePage,
+});
+
+const newProjectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/vitrin/yeni',
+  component: ProjectFormPage,
+});
+
+const editProjectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/vitrin/$projectId',
+  component: ProjectFormPage,
+});
+
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '*',
@@ -120,6 +140,9 @@ const routeTree = rootRoute.addChildren([
   postDetailRoute,
   profileRoute,
   editProfileRoute,
+  showcaseRoute,
+  newProjectRoute,
+  editProjectRoute,
   notFoundRoute,
 ]);
 

@@ -428,3 +428,54 @@ ull
 - check.bat yesil (typecheck + lint + build), 96 unit test (35 shared + 25 api +
   36 web) ve 77 e2e test gecti.
 - Commit: #7. Siradaki: #8.
+
+## 2026-09-30 - Durum (#8 tamamlandi)
+
+### Yapilanlar
+
+- Vitrin kaydi formu (`apps/web/src/pages/ProjectFormPage.tsx`): ad, baglanti,
+  kategori, aciklama, "nelerle gelistirildi" etiket girisi (Enter veya "Ekle"
+  butonu, etiket kaldirma), yayinda onay kutusu, logo (1:1) ve kapak gorseli
+  (en fazla 5) yukleme. Ayni bileşen `/vitrin/yeni` ve `/vitrin/$projectId`
+  (duzenleme) rotalarinda kullaniliyor; duzenlemede `GET /api/projects/:id`
+  verisi formu dolduruyor.
+- Vitrin kayitlari listesi (`apps/web/src/pages/ShowcasePage.tsx`):
+  `/vitrin` altinda kayitlar, duzenleme (kalem) ve silme (cop) butonlari,
+  silmede ikinci onay blogu. Oturumsuz erisimde giris cagrisi ve
+  `?redirect` ile donus.
+- API katmani (`apps/web/src/features/projects/api.ts`): `projectsApi` ile
+  create / `mine` / `get` / `update` / `remove` ve `kind=logo` / `kind=cover`
+  multipart yukleme. Logo ve kapak limitleri API tarafinda zaten uygulandi
+  (PROJECT_LOGO_MAX_MB, PROJECT_COVER_MAX_MB, PROJECT_COVER_MAX_COUNT).
+- Header'a "Vitrin" baglantisi eklendi.
+- Rotalar: `/vitrin`, `/vitrin/yeni`, `/vitrin/$projectId`.
+
+### Duzeltilen hatalar
+
+- `Field` bileseni `htmlFor` icin `id` ya da `name` bekliyor; ikisi de
+  verilmediginde label input'a baglanmiyordu (erisilebilirlik hatasi). Forma
+  `id` degerleri eklendi.
+- Vitrin kaydi olusturma akisi shared `createProjectSchema` ile de
+  dogrulanir; gecersiz baglantida hata mesaji form ustunde gosterilir.
+- API tarafi hazirdi, degisiklik gerekmedi: `POST /api/projects`,
+  `GET /api/me/projects`, `PATCH`/`DELETE /api/projects/:id` (sahip kontrolu
+  ile 403), `GET /api/users/:username/projects` yalnizca `launched = true`
+  kayitlari donuyor (taslaklar profilde gizli, sayac yine artiyor).
+
+### Testler
+
+- Yeni: `e2e/showcase.spec.ts` (7 test) - kayit olusturma ve listede
+  gorunum, profil sayaci + taslak gizliligi + yayina alininca gorunme,
+  duzenleme (ad, etiket, yayinda), silme (onayli), logo + kapak yukleme,
+  oturumsuz giris cagrisi, API 400/401 ve sahip olmayan kullanicida 403
+  (kaydin durdugunun dogrulanmasiyla).
+- Playwright notu: `getByRole('button', { name: 'Ekle' })` butonu "Kapak
+  ekle" ile cakisiyor, `exact: true` ile daraltildi. Turkce karakter iceren
+  metin eslesmelerinde diakritik duyarsiz arama yapilmadigi icin metinler
+  birebir ayni yazildi.
+
+### Sonuc
+
+- check.bat yesil (typecheck + lint + build), 96 unit test (35 shared + 25 api +
+  36 web) ve 84 e2e test gecti.
+- Commit: #8. Siradaki: #9 (Kariyer Vitrini akisi).
