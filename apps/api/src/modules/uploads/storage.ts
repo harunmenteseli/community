@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -77,4 +77,30 @@ export async function processUpload(file: { data: Buffer; mimetype: string; file
   const ext = path.extname(file.filename).toLowerCase() || '.jpg';
   const url = await storage.save(file.data, kind, ext);
   return { url, width, height };
+}
+
+/**
+ * Kaydi silinen yüklemeleri diskten de kaldirir. Yalnizca kendi uploads
+ * dizinimiz icindeki dosyalara dokunur: URL disaridan gelebilecegi icin
+ * cozulen yolun uploadsDir altinda kaldigi ayrica dogrulanir.
+ */
+export async function deleteStoredFile(url: string): Promise<boolean> {
+  const prefix = `${env.API_URL}/uploads/`;
+  if (!url.startsWith(prefix)) return false;
+
+  const relative = url.slice(prefix.length).split('?')[0] ?? '';
+  if (!relative) return false;
+  const target = path.resolve(uploadsDir, relative);
+  // path.sep ekleyerek "uploads-evil" gibi kardes dizinleri de eleiyoruz.
+  if (!target.startsWith(uploadsDir + path.sep)) return false;
+
+  try {
+    await unlink(target);
+    return true;
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT') return false;
+    logger.error({ err, target }, 'Yüklenen dosya silinemedi');
+    return false;
+  }
 }

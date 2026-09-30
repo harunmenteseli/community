@@ -34,8 +34,55 @@ export const userPublicSchema = z.object({
   bio: z.string().max(500).nullable(),
   avatarUrl: z.string().url().nullable(),
   siteUrl: z.string().url().nullable(),
+  tools: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),
 });
+
+/**
+ * Kullanici adina alinamayacak adlar: rota/adres cakismasi veya toplulugu
+ * temsil eden hesaplar. Karsilastirma buyuk/kucuk harf duyarsiz.
+ */
+export const RESERVED_USERNAMES = [
+  'admin',
+  'administrator',
+  'root',
+  'moderator',
+  'mod',
+  'support',
+  'help',
+  'about',
+  'api',
+  'app',
+  'auth',
+  'login',
+  'logout',
+  'register',
+  'signup',
+  'signin',
+  'settings',
+  'account',
+  'me',
+  'user',
+  'users',
+  'new',
+  'edit',
+  'delete',
+  'post',
+  'posts',
+  'feed',
+  'vitrin',
+  'bildirimler',
+  'hesap',
+  'community',
+  'null',
+  'undefined',
+  'www',
+] as const;
+
+export function isReservedUsername(username: string): boolean {
+  const normalized = username.trim().toLowerCase();
+  return RESERVED_USERNAMES.some((reserved) => reserved === normalized);
+}
 
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
@@ -67,17 +114,34 @@ export const updateProfileSchema = z
     siteUrl: z.string().trim().url().or(z.literal('')),
     // Avatar once `POST /api/uploads?kind=avatar` ile yuklenir, sonra URL yazilir.
     avatarUrl: z.string().trim().url().or(z.literal('')).optional(),
+    // Gonderilmezse mevcut liste korunur; gonderilirse tamamen degisir.
+    tools: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
   })
   .strict();
 
-export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(8),
-  newPassword: z.string().min(8).max(128),
-});
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(8).max(128),
+    newPassword: z.string().min(8).max(128),
+  })
+  .strict();
 
-export const updateUsernameSchema = z.object({
-  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
-});
+export const updateUsernameSchema = z
+  .object({
+    username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
+  })
+  .strict();
+
+/**
+ * Hesap silme iki factorlu onay ister: mevcut sifre ve kullanici adinin
+ * birebir teyidi. Sadece istemci dogrulamasina guvenilmiyor.
+ */
+export const deleteAccountSchema = z
+  .object({
+    password: z.string().min(1).max(128),
+    confirmText: z.string().min(1).max(30),
+  })
+  .strict();
 
 export const pollOptionSchema = z.object({
   text: z.string().trim().min(1).max(120),
@@ -153,6 +217,8 @@ export type {
   UpdateProfileDto,
   ChangePasswordDto,
   UpdateUsernameDto,
+  DeleteAccountDto,
+  AccountInfo,
   CreatePostDto,
   UpdatePostDto,
   CreateCommentDto,

@@ -3,6 +3,7 @@ import { Link, useParams } from '@tanstack/react-router';
 import { useAtomValue } from 'jotai';
 import { ExternalLink, UserMinus, UserPlus } from 'lucide-react';
 import { Avatar } from '../components/ui/avatar';
+import { Badge } from '../components/ui/badge';
 import { Button, buttonClasses } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
 import { userAtom } from '../state/atoms';
@@ -91,6 +92,16 @@ export function ProfilePage() {
               </a>
             ) : null}
 
+            {data.user.tools.length > 0 ? (
+              <ul className="mt-3 flex flex-wrap gap-1.5">
+                {data.user.tools.map((tool) => (
+                  <li key={tool.toLowerCase()}>
+                    <Badge variant="neutral">{tool}</Badge>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
             <p className="mt-2 text-xs text-ink-500 dark:text-ink-400">
               {joinDate(data.user.createdAt)} tarihinden beri üye
             </p>
@@ -98,7 +109,7 @@ export function ProfilePage() {
 
           <div className="flex shrink-0 flex-col gap-2">
             {data.isSelf ? (
-              <Link to="/ayarlar/profil" className={buttonClasses({ variant: 'outline', size: 'sm' })}>
+              <Link to="/settings/profile" className={buttonClasses({ variant: 'outline', size: 'sm' })}>
                 Profili düzenle
               </Link>
             ) : user ? (

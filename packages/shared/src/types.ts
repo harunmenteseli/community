@@ -5,6 +5,8 @@ export interface UserPublic {
   bio: string | null;
   avatarUrl: string | null;
   siteUrl: string | null;
+  /** Profilde sergilenen araç/teknoloji etiketleri. */
+  tools: string[];
   createdAt: string;
 }
 
@@ -35,6 +37,8 @@ export interface UpdateProfileDto {
   siteUrl: string;
   /** Avatar icin `POST /api/uploads?kind=avatar` sonrasi gelen URL. */
   avatarUrl?: string;
+  /** Gonderilmezse mevcut araç listesi korunur. */
+  tools?: string[];
 }
 
 export interface ChangePasswordDto {
@@ -44,6 +48,22 @@ export interface ChangePasswordDto {
 
 export interface UpdateUsernameDto {
   username: string;
+}
+
+/** Hesap silme onayi: sifre + kullanici adi tekrar yazilmali. */
+export interface DeleteAccountDto {
+  password: string;
+  confirmText: string;
+}
+
+/** Sadece hesabin sahibine donen hesap bilgileri. */
+export interface AccountInfo {
+  username: string;
+  name: string;
+  email: string;
+  emailVerifiedAt: string | null;
+  role: string;
+  createdAt: string;
 }
 
 export interface PollInput {

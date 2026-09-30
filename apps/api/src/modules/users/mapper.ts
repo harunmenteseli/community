@@ -13,6 +13,7 @@ export async function toUserPublic(username: string) {
       bio: users.bio,
       avatarUrl: users.avatarUrl,
       siteUrl: users.siteUrl,
+      tools: users.tools,
       createdAt: users.createdAt,
     })
     .from(users)
@@ -42,6 +43,7 @@ async function toUserPublicByWhere(where: SQL) {
       bio: users.bio,
       avatarUrl: users.avatarUrl,
       siteUrl: users.siteUrl,
+      tools: users.tools,
       createdAt: users.createdAt,
     })
     .from(users)

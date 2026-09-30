@@ -3,6 +3,7 @@ import {
   updateProfileSchema,
   changePasswordSchema,
   updateUsernameSchema,
+  deleteAccountSchema,
 } from '@community/shared';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../../db';
@@ -26,6 +27,7 @@ export async function registerUsers(app: FastifyInstance): Promise<void> {
         bio: users.bio,
         avatarUrl: users.avatarUrl,
         siteUrl: users.siteUrl,
+        tools: users.tools,
         createdAt: users.createdAt,
       })
       .from(users)
@@ -65,6 +67,12 @@ export async function registerUsers(app: FastifyInstance): Promise<void> {
     return { user: await toUserPublicById(id) };
   });
 
+  // Hesap sayfasi icin: e-posta ve rol sadece sahibine doner.
+  app.get('/api/users/me/account', async (request) => {
+    const { id } = request.requireAuthUser();
+    return { account: await usersService.getAccountInfo(id) };
+  });
+
   app.post('/api/users/me/change-password', async (request) => {
     const { id, sessionId } = request.requireAuthUser();
     const body = changePasswordSchema.parse(request.body);
@@ -81,8 +89,11 @@ export async function registerUsers(app: FastifyInstance): Promise<void> {
   });
 
   app.delete('/api/users/me', async (request) => {
-    const { id } = request.requireAuthUser();
-    await usersService.deleteAccount(id);
+    const { id, sessionId } = request.requireAuthUser();
+    const body = deleteAccountSchema.parse(request.body);
+    await usersService.deleteAccount(id, body.password, body.confirmText);
+    // Silinen hesabin oturumlari DB'den gitti; istemci de yerel durumu temizlesin.
+    if (sessionId) await authService.revokeSession(sessionId, id);
     return { success: true };
   });
 

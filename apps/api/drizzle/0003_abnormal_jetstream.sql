@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "tools" jsonb DEFAULT '[]'::jsonb NOT NULL;

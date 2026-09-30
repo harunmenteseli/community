@@ -660,3 +660,67 @@ ull
 - check.bat yeşil, 121 unit test (35 shared + 25 api + 61 web) ve 104 e2e test
   geçti.
 - Commit: #11. Sıradaki: #12 (ayarlar sayfaları).
+
+## 2026-09-30 - Durum (#12 tamamlandi)
+
+### Yapilanlar
+
+- **Ayarlar yerlesimi** (`SettingsLayout`): pathless route altinda
+  `/settings/profile`, `/settings/security`, `/settings/notifications`,
+  `/settings/account`. `beforeLoad` oturumsuz erisimi
+  `/login?redirect=...` adresine yonlendiriyor; `/settings` index -> profile.
+- **Profil sayfasi**: tools alani (virgulle ayrilmis metin -> en fazla 20 kayit,
+  kirpma + tekillestirme), badge onizleme, canonical `/settings/profile`
+  baglantisi. Eski `/ayarlar/profil` yeni adrese redirect ediyor.
+- **Guvenlik sayfasi**: kullanici adi degistirme (reserved ad + buyuk/kucuk harf
+  duyarsiz tekil kontrolu) ve sifre degistirme. Sifre degistiginde **diger
+  oturumlar kapanir**, tarayici oturumu acik kalir; "Digerlerini kapat" ve
+  oturum listesi korunur.
+- **Bildirim tercihleri**: takip/yorum/begeni/yanit/mention anahtarlari tek
+  tek ac-kapa anahtarlari; kayit yoksa `defaultNotificationSettings` ile
+  normalize edilir.
+- **Hesap sayfasi**: hesap bilgileri (`GET /api/users/me/account`), e-posta
+  degisikligi kapsam disi, hesap silme onay modal'i.
+- Backend: `users.tools` (jsonb) + migration `0003_abnormal_jetstream.sql`,
+  `UserPublic.tools`, `GET /api/users/me/account`, `DELETE /api/users/me`
+  artik `{ password, confirmText }` ile dogrulanir (kullanici adi birebir
+  eslesmeli), avatar dosyasi temizlenir.
+
+### Duzeltilen hatalar
+
+- **`SecurityPage` parola formu hicbir zaman gecersiz kalmiyordu**: elle
+  yazilan resolver `changePasswordSchema.strict()`'i `confirmPassword` iceren
+  tum form degeriyle dogruluyor, `zodResolver` ile `passwordSchema`
+  (shared sema + eslesme `refine`) kullanilmasina gecildi.
+- **Kullanici adi butonu kalici disable idi**: buton `!username.trim()` ile
+  kontrol ediliyordu, `setUsername` ise hic cagrilmiyordu; deger artik form
+  state'inden (`useForm`) geliyor.
+- **Hesap silme modalindeki alanlar etiketsizdi**: `Field` `id`/`name`
+  almadigi icin `getByLabel('Şifre')` calismiyordu (aslikari label
+  `htmlFor`'u baglanamiyordu).
+- Vitest globals (`.test.ts` dosyalarinda `describe/it/expect`) API typecheck'ini
+  kirletiyordu; iki yeni test dosyasina acik `vitest` importlari eklendi ve
+  kullanilmayan importlar temizlendi.
+- Eski `/ayarlar/profil` ve oturumsuz `/settings/security` e2e beklentileri
+  yeni canonical yola ve guard davranisina guncellendi.
+
+### Testler
+
+- Yeni: `e2e/settings.spec.ts` (26 test) - guard redirect, layout + header
+  baglantisi, tools ekleme, kullanici adi degistirme (basarili/rezerve/alinan/
+  buyuk-kucuk harf), sifre degistirme (basarili, eslesmeme, yanlis mevcut
+  sifre, diger oturumlarin kapanmasi), bildirim tercihi, hesap bilgileri ve
+  hesap silme akislari (eksik onay / yanlis sifre / basarili silme).
+- Yeni unit testler: `apps/api/src/modules/users/service.test.ts` (tools
+  normalize, username kurallari, hesap silme sirasi), `storage.test.ts`
+  (`deleteStoredFile` + dizin disi erisim reddi), `EditProfilePage.test.tsx`
+  (tools ayristirma).
+- Yonlendirme redirect'leri client tarafinda oldugu icin redirect testleri
+  `waitForURL` ile hedefi bekliyor.
+
+### Sonuc
+
+- check.bat yeşil, 140 unit test (35 shared + 40 api + 65 web) ve 130 e2e test
+  geçti.
+- Commit: #12. Sıradaki: #13.
+

@@ -180,10 +180,10 @@ test.describe('auth sayfalari', () => {
 });
 
 test.describe('oturum yonetimi', () => {
-  test('oturumsuz kullanici guvenlik sayfasinda giris istemini gorur', async ({ page }) => {
+  test('oturumsuz kullanici guvenlik sayfasindan login e yonlendirilir', async ({ page }) => {
     await page.goto('/settings/security');
 
-    await expect(page.getByRole('heading', { name: 'Giriş gerekli' })).toBeVisible();
+    await expect(page).toHaveURL(/\/login\?redirect=/);
     await expect(page.getByText('Aktif oturumlar')).toHaveCount(0);
   });
 
@@ -195,7 +195,8 @@ test.describe('oturum yonetimi', () => {
 
     // createAccount da bir oturum actigi icin kayit + tarayici = 2 oturum.
     await expect(page.getByRole('heading', { name: 'Aktif oturumlar (2)' })).toBeVisible();
-    await expect(page.getByText('Bu cihaz')).toBeVisible();
+    // Rozet metni ("bu cihaz açık kalır" açıklamasıyla karışmasın diye exact).
+    await expect(page.getByText('Bu cihaz', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Diğerlerini kapat' })).toBeEnabled();
   });
 

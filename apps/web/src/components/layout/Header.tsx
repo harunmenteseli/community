@@ -1,7 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { toast } from 'sonner';
-import { LogOut, PenSquare } from 'lucide-react';
+import { LogOut, PenSquare, Settings } from 'lucide-react';
 import { userAtom, clearSessionAtom } from '../../state/atoms';
 import { BrandMark } from '../../features/auth/AuthShell';
 import { Avatar } from '../ui/avatar';
@@ -64,6 +64,11 @@ export function Header() {
                   className="h-8 w-8 text-xs"
                 />
                 <span className="hidden text-sm font-medium sm:inline">{user.name}</span>
+              </Link>
+              <Link to="/settings/profile" aria-label="Ayarlar">
+                <Button variant="ghost" size="icon-sm">
+                  <Settings className="h-4 w-4" />
+                </Button>
               </Link>
               <Button variant="ghost" size="icon-sm" aria-label="Çıkış yap" onClick={onLogout}>
                 <LogOut className="h-4 w-4" />

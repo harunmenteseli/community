@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -10,6 +10,8 @@ export const users = pgTable('users', {
   bio: text('bio'),
   avatarUrl: text('avatar_url'),
   siteUrl: text('site_url'),
+  // Profilde sergilenen araç/teknoloji etiketleri (en fazla 20 adet).
+  tools: jsonb('tools').$type<string[]>().notNull().default([]),
   role: varchar('role', { length: 20 }).notNull().default('user'),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

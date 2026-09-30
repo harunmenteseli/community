@@ -64,7 +64,8 @@ export const http = {
   get: <T>(path: string, init?: RequestInit) => request<T>(path, { method: 'GET', ...init }),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
   patch: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body: body === undefined ? undefined : JSON.stringify(body) }),
-  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  put: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PUT', body: body === undefined ? undefined : JSON.stringify(body) }),
+  delete: <T>(path: string, body?: unknown) => request<T>(path, { method: 'DELETE', body: body === undefined ? undefined : JSON.stringify(body) }),
   // Multipart: govde JSON.stringify edilmemeli, yoksa sunucu "not multipart" diyor.
   upload: <T>(path: string, form: FormData) => request<T>(path, { method: 'POST', body: form }),
 };

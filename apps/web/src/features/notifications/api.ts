@@ -1,3 +1,5 @@
+import type { NotificationSettingsDto } from '@community/shared';
+import { notificationSettingsSchema } from '@community/shared';
 import { http } from '../../lib/api';
 
 export interface NotificationActor {
@@ -37,4 +39,11 @@ export const notificationsApi = {
   unreadCount: () => http.get<{ count: number }>('/api/notifications/unread-count'),
   markRead: (id: string) => http.post<{ success: true }>(`/api/notifications/${id}/read`),
   markAllRead: () => http.post<{ success: true }>('/api/notifications/read-all'),
+  settings: () => http.get<{ settings: NotificationSettingsDto }>('/api/notifications/settings'),
+  updateSettings: (input: Partial<NotificationSettingsDto>) =>
+    http.put<{ settings: NotificationSettingsDto }>(
+      '/api/notifications/settings',
+      // Kismi gonderim de calisir: sema eksik anahtarlari varsayilan doldurur.
+      notificationSettingsSchema.parse(input),
+    ),
 };

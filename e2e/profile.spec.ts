@@ -108,7 +108,7 @@ test.describe('profil duzenleme', () => {
     const account = await createAccount(api, 'duzenle');
 
     await signInViaUi(page, account);
-    await page.goto('/ayarlar/profil');
+    await page.goto('/settings/profile');
 
     await page.getByLabel('Ad').fill('Guncel Ad');
     await page.getByLabel('Bio').fill('Yeni bio metni');
@@ -131,13 +131,13 @@ test.describe('profil duzenleme', () => {
     const account = await createAccount(api, 'duzenle');
 
     await signInViaUi(page, account);
-    await page.goto('/ayarlar/profil');
+    await page.goto('/settings/profile');
 
     await page.getByLabel('Bağlantı').fill('gectersiz adres');
     await page.getByRole('button', { name: 'Kaydet' }).click();
 
     await expect(page.getByRole('alert').first()).toBeVisible();
-    await expect(page).toHaveURL(/\/ayarlar\/profil$/);
+    await expect(page).toHaveURL(/\/settings\/profile$/);
   });
 
   test('avatar yuklenir ve profilde gorunur', async ({ page, api }) => {
@@ -150,7 +150,7 @@ test.describe('profil duzenleme', () => {
     );
 
     await signInViaUi(page, account);
-    await page.goto('/ayarlar/profil');
+    await page.goto('/settings/profile');
 
     await page.setInputFiles('input[type="file"]', {
       name: 'avatar.png',
@@ -168,11 +168,9 @@ test.describe('profil duzenleme', () => {
     await expect(page.locator('article img').first()).toBeVisible();
   });
 
-  test('oturumsuz erisimde giris cagrisi gorunur', async ({ page }) => {
-    await page.goto('/ayarlar/profil');
-    await expect(page.getByRole('heading', { name: 'Giriş gerekli' })).toBeVisible();
-    // Header'da da "Giriş yap" linki var; sayfa icindekini hedefliyoruz.
-    await expect(page.getByRole('main').getByRole('link', { name: 'Giriş yap' })).toBeVisible();
+  test('oturumsuz erisimde login e yonlendirilir', async ({ page }) => {
+    await page.goto('/settings/profile');
+    await expect(page).toHaveURL(/\/login\?redirect=/);
   });
 
   test('api: kimliksiz profil guncellemesi 401 doner', async ({ api }) => {

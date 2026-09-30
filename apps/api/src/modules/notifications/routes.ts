@@ -1,8 +1,5 @@
 import type { FastifyInstance } from 'fastify';
 import { notificationSettingsSchema } from '@community/shared';
-import { db } from '../../db';
-import { notificationSettings } from '../../db/schema';
-import { eq } from 'drizzle-orm';
 import { notificationsService } from './service';
 
 export async function registerNotifications(app: FastifyInstance): Promise<void> {
@@ -36,18 +33,13 @@ export async function registerNotifications(app: FastifyInstance): Promise<void>
 
   app.get('/api/notifications/settings', async (request) => {
     const { id } = request.requireAuthUser();
-    const row = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, id)).limit(1);
-    return { settings: row[0] ?? null };
+    return { settings: await notificationsService.getSettings(id) };
   });
 
   app.put('/api/notifications/settings', async (request) => {
     const { id } = request.requireAuthUser();
     const settings = notificationSettingsSchema.parse(request.body);
-    await db
-      .insert(notificationSettings)
-      .values({ userId: id, ...settings })
-      .onConflictDoUpdate({ target: notificationSettings.userId, set: { ...settings, updatedAt: new Date() } });
-    return { settings };
+    return { settings: await notificationsService.updateSettings(id, settings) };
   });
 
   // Socket.IO bağlantısı: apps/api/src/lib/realtime.ts üzerinden auth header ile doğrulanır.

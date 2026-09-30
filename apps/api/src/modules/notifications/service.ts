@@ -1,4 +1,5 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
+import type { NotificationSettingsDto } from '@community/shared';
 import type { DB } from '../../db';
 import { db } from '../../db';
 import { notifications, notificationSettings, users } from '../../db/schema';
@@ -13,14 +14,30 @@ export interface NotificationInput {
   payload?: Record<string, unknown>;
 }
 
-const TYPE_TO_SETTING: Record<string, 'follow' | 'like' | 'comment' | 'launch' | 'weeklyDigest'> = {
+/**
+ * Bildirim tipi -> tercih anahtari. `reply` ve `mention` ayri anahtarlara
+ * baglanir: kullanici yanitlari kapatirsa yorumlari da kapatmak zorunda kalmasin.
+ * Eslesmeyen tipler (orn. reportUpdate) tercihe tabi degildir.
+ */
+const TYPE_TO_SETTING: Record<string, keyof NotificationSettingsDto | undefined> = {
   follow: 'follow',
   like: 'like',
   bookmark: 'like',
   comment: 'comment',
-  reply: 'comment',
-  mention: 'comment',
+  reply: 'reply',
+  mention: 'mention',
   launch: 'launch',
+};
+
+/** Kayit yoksa gecerli olan varsayilanlar (kolon varsayilanlariyla ayni). */
+export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsDto = {
+  follow: true,
+  comment: true,
+  like: true,
+  reply: true,
+  mention: true,
+  launch: true,
+  weeklyDigest: true,
 };
 
 export class NotificationsService {
@@ -124,6 +141,37 @@ export class NotificationsService {
     // sekme/cihazda okunmamis sayaci eski kalirdi.
     const count = await this.unreadCount(userId);
     events.emit('notification:read', { recipientId: userId, count });
+  }
+
+  /** Eksik kayit veya eski satir icin varsayilanlara dusen normalize tercihler. */
+  async getSettings(userId: string): Promise<NotificationSettingsDto> {
+    const row = await this.db
+      .select()
+      .from(notificationSettings)
+      .where(eq(notificationSettings.userId, userId))
+      .limit(1);
+    const current = row[0];
+    if (!current) return { ...DEFAULT_NOTIFICATION_SETTINGS };
+    return {
+      follow: current.follow,
+      comment: current.comment,
+      like: current.like,
+      reply: current.reply,
+      mention: current.mention,
+      launch: current.launch,
+      weeklyDigest: current.weeklyDigest,
+    };
+  }
+
+  async updateSettings(userId: string, settings: NotificationSettingsDto): Promise<NotificationSettingsDto> {
+    await this.db
+      .insert(notificationSettings)
+      .values({ userId, ...settings })
+      .onConflictDoUpdate({
+        target: notificationSettings.userId,
+        set: { ...settings, updatedAt: new Date() },
+      });
+    return settings;
   }
 }
 

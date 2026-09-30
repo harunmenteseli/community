@@ -1,8 +1,18 @@
-import { createRootRoute, createRoute, createRouter, type Router } from '@tanstack/react-router';
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  redirect,
+  type Router,
+} from '@tanstack/react-router';
 import { RootLayout } from '../components/layout/RootLayout';
+import { SettingsLayout } from '../components/layout/SettingsLayout';
 import { HomePage } from '../pages/HomePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { SecurityPage } from '../pages/SecurityPage';
+import { EditProfilePage } from '../pages/EditProfilePage';
+import { NotificationSettingsPage } from '../pages/NotificationSettingsPage';
+import { AccountPage } from '../pages/AccountPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { RegisterPage } from '../features/auth/RegisterPage';
 import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
@@ -13,11 +23,12 @@ import { TaslaklarPage } from '../pages/TaslaklarPage';
 import { FeedPage } from '../pages/FeedPage';
 import { PostDetailPage } from '../pages/PostDetailPage';
 import { ProfilePage } from '../pages/ProfilePage';
-import { EditProfilePage } from '../pages/EditProfilePage';
 import { ShowcasePage } from '../pages/ShowcasePage';
 import { ProjectFormPage } from '../pages/ProjectFormPage';
 import { CareerShowcasePage } from '../pages/CareerShowcasePage';
 import { NotificationsPage } from '../pages/NotificationsPage';
+import { store } from '../state/bootstrap';
+import { isAuthedAtom } from '../state/atoms';
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -62,10 +73,58 @@ const verifyEmailRoute = createRoute({
   component: VerifyEmailPage,
 });
 
-const securityRoute = createRoute({
+// Ayarlar alanı: koruma ve yerleşim tek bir layout rotasında toplanır.
+// Önceden her sayfa kendi "Giriş gerekli" ekranını gösteriyordu; artık
+// kimliksiz erişim login'e yönleniyor ve dönüş adresi korunuyor.
+const settingsLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
+  id: '/settings-layout',
+  component: SettingsLayout,
+  beforeLoad: ({ location }) => {
+    if (store.get(isAuthedAtom)) return;
+    throw redirect({ to: '/login', search: { redirect: location.href } as never });
+  },
+});
+
+const settingsIndexRoute = createRoute({
+  getParentRoute: () => settingsLayoutRoute,
+  path: '/settings',
+  beforeLoad: () => {
+    throw redirect({ to: '/settings/profile' });
+  },
+});
+
+const editProfileRoute = createRoute({
+  getParentRoute: () => settingsLayoutRoute,
+  path: '/settings/profile',
+  component: EditProfilePage,
+});
+
+// Eski adres: profil düzenleme sayfası "/ayarlar/profil" idi.
+const legacyEditProfileRoute = createRoute({
+  getParentRoute: () => settingsLayoutRoute,
+  path: '/ayarlar/profil',
+  beforeLoad: () => {
+    throw redirect({ to: '/settings/profile' });
+  },
+});
+
+const securityRoute = createRoute({
+  getParentRoute: () => settingsLayoutRoute,
   path: '/settings/security',
   component: SecurityPage,
+});
+
+const notificationSettingsRoute = createRoute({
+  getParentRoute: () => settingsLayoutRoute,
+  path: '/settings/notifications',
+  component: NotificationSettingsPage,
+});
+
+const accountRoute = createRoute({
+  getParentRoute: () => settingsLayoutRoute,
+  path: '/settings/account',
+  component: AccountPage,
 });
 
 const newPostRoute = createRoute({
@@ -96,12 +155,6 @@ const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/u/$username',
   component: ProfilePage,
-});
-
-const editProfileRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/ayarlar/profil',
-  component: EditProfilePage,
 });
 
 const showcaseRoute = createRoute({
@@ -147,13 +200,19 @@ const routeTree = rootRoute.addChildren([
   forgotPasswordRoute,
   resetPasswordRoute,
   verifyEmailRoute,
-  securityRoute,
+  settingsLayoutRoute.addChildren([
+    settingsIndexRoute,
+    editProfileRoute,
+    legacyEditProfileRoute,
+    securityRoute,
+    notificationSettingsRoute,
+    accountRoute,
+  ]),
   newPostRoute,
   taslaklarRoute,
   feedRoute,
   postDetailRoute,
   profileRoute,
-  editProfileRoute,
   showcaseRoute,
   newProjectRoute,
   editProjectRoute,

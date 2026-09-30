@@ -1,4 +1,4 @@
-import type { UpdateProfileDto, UserPublic } from '@community/shared';
+import type { AccountInfo, UpdateProfileDto, UserPublic } from '@community/shared';
 import { http } from '../../lib/api';
 
 export interface ProfileStats {
@@ -37,6 +37,19 @@ export const usersApi = {
 
   updateProfile: (input: UpdateProfileDto) =>
     http.patch<{ user: UserPublic & { followerCount: number; followingCount: number } }>('/api/users/me', input),
+
+  account: () => http.get<{ account: AccountInfo }>('/api/users/me/account'),
+
+  changeUsername: (username: string) =>
+    http.patch<{ user: UserPublic & { followerCount: number; followingCount: number } }>('/api/users/me/username', {
+      username,
+    }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    http.post<{ success: true }>('/api/users/me/change-password', { currentPassword, newPassword }),
+
+  deleteAccount: (password: string, confirmText: string) =>
+    http.delete<{ success: true }>('/api/users/me', { password, confirmText }),
 
   follow: (username: string) => http.post<{ success: true }>(`/api/users/${encodeURIComponent(username)}/follow`),
 
