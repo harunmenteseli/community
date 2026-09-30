@@ -22,7 +22,5 @@ export async function closeRedis(): Promise<void> {
 
 export const cacheTtl = {
   userByUsername: 60,
-  githubPinned: 300,
-  githubContributions: 300,
   trending: 60,
 } as const;

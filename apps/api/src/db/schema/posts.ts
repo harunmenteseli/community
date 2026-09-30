@@ -13,7 +13,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
-export const postCategory = pgEnum('post_category', ['soru', 'fikir', 'yaptin', 'genel']);
+export const postCategory = pgEnum('post_category', ['soru', 'oneri', 'kariyer', 'bug', 'genel']);
+export const postGame = pgEnum('post_game', ['ea-fc', 'efootball', 'football-manager']);
 export const postSource = pgEnum('post_source', ['human', 'ai']);
 
 export const posts = pgTable('posts', {
@@ -24,6 +25,7 @@ export const posts = pgTable('posts', {
   title: varchar('title', { length: 200 }),
   content: text('content').notNull(),
   category: postCategory('category').notNull().default('genel'),
+  game: postGame('game'),
   source: postSource('source').notNull().default('human'),
   isDraft: boolean('is_draft').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

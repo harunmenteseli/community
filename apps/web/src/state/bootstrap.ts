@@ -17,13 +17,3 @@ export async function bootstrapAuth(): Promise<void> {
     store.set(clearSessionAtom);
   }
 }
-
-export async function applyOAuthToken(token: string): Promise<boolean> {
-  try {
-    const { user } = await authApi.me();
-    store.set(setSessionAtom, { token, user });
-    return true;
-  } catch {
-    return false;
-  }
-}

@@ -13,11 +13,11 @@ export function HomePage() {
         Topluluk önizlemesi
       </span>
       <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
-        Geliştiriciler için <span className="text-brand-gradient">topluluk</span> platformu
+        Futbol oyunları için <span className="text-brand-gradient">topluluk</span> platformu
       </h1>
       <p className="mt-4 max-w-xl text-base text-ink-500 dark:text-ink-400">
-        Soru sor, fikir paylaş, projelerini vitrine çıkar. Feed, Launchpad ve haftalık AI özeti
-        yakında burada.
+        EA FC, eFootball ve Football Manager için soru sor, öneri paylaş, kariyer hikayen anlat.
+        Tartış, çözüm bul, topluluğa katıl.
       </p>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">

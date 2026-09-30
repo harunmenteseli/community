@@ -37,7 +37,7 @@ interface ErrorBody {
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  if (init.body !== undefined && !headers.has('content-type')) {
+  if (init.body !== undefined && !(init.body instanceof FormData) && !headers.has('content-type')) {
     headers.set('content-type', 'application/json');
   }
   const token = getAuthToken();

@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { DB } from '../../db';
 import { db } from '../../db';
-import { users, userTools, follows, oauthAccounts, reports, posts, comments, projects } from '../../db/schema';
+import { users, follows, reports, posts, comments } from '../../db/schema';
 import type { UpdateProfileDto, ChangePasswordDto, UpdateUsernameDto } from '@community/shared';
 import { errors, isUniqueViolation } from '../../lib/errors';
 import argon2 from 'argon2';
@@ -10,28 +10,21 @@ export class UsersService {
   constructor(private readonly db: DB) {}
 
   async updateProfile(userId: string, input: UpdateProfileDto) {
-    const { tools, ...profile } = input;
     await this.db
       .update(users)
       .set({
-        name: profile.name,
-        bio: profile.bio || null,
-        siteUrl: profile.siteUrl || null,
-        githubUsername: profile.githubUsername || null,
+        name: input.name,
+        bio: input.bio || null,
+        siteUrl: input.siteUrl || null,
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
-
-    await this.db.delete(userTools).where(eq(userTools.userId, userId));
-    if (tools.length > 0) {
-      await this.db.insert(userTools).values(tools.map((name, i) => ({ userId, name, sortOrder: i })));
-    }
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
     const user = (await this.db.select().from(users).where(eq(users.id, userId)).limit(1))[0];
     if (!user?.passwordHash) {
-      throw errors.badRequest('Bu hesapta şifre yok. GitHub ile giriş yapılmış olabilir', 'NO_PASSWORD');
+      throw errors.badRequest('Bu hesapta şifre kayıtlı değil', 'NO_PASSWORD');
     }
     if (!(await argon2.verify(user.passwordHash, currentPassword))) {
       throw errors.unauthorized('Mevcut şifre hatalı', 'INVALID_CURRENT_PASSWORD');
@@ -52,9 +45,6 @@ export class UsersService {
   async deleteAccount(userId: string) {
     const user = (await this.db.select().from(users).where(eq(users.id, userId)).limit(1))[0];
     if (!user) throw errors.notFound('Kullanıcı bulunamadı');
-    if (user.email.endsWith('@github.local')) {
-      // oauth-only hesap: e-postayı anonimleştir (cascade silme yerine veri koruma)
-    }
     await this.db.delete(users).where(eq(users.id, userId));
   }
 
@@ -85,22 +75,12 @@ export class UsersService {
     await this.db.insert(reports).values({ reporterId, ...input });
   }
 
-  async isOauthOnly(userId: string): Promise<boolean> {
-    const row = await this.db
-      .select({ id: oauthAccounts.id })
-      .from(oauthAccounts)
-      .where(eq(oauthAccounts.userId, userId))
-      .limit(1);
-    return Boolean(row[0]);
-  }
-
   async getStats(userId: string) {
-    const [followers, following, postCount, commentCount, projectCount] = await Promise.all([
+    const [followers, following, postCount, commentCount] = await Promise.all([
       this.db.select().from(follows).where(eq(follows.followingId, userId)),
       this.db.select().from(follows).where(eq(follows.followerId, userId)),
       this.db.select().from(posts).where(and(eq(posts.authorId, userId), eq(posts.isDraft, false))),
       this.db.select().from(comments).where(eq(comments.authorId, userId)),
-      this.db.select().from(projects).where(eq(projects.userId, userId)),
     ]);
 
     return {
@@ -108,7 +88,6 @@ export class UsersService {
       followingCount: following.length,
       postCount: postCount.length,
       commentCount: commentCount.length,
-      projectCount: projectCount.length,
     };
   }
 

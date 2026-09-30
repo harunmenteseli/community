@@ -6,7 +6,7 @@ import {
 } from '@community/shared';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../../db';
-import { users, userTools, follows, posts, projects } from '../../db/schema';
+import { users, follows, posts, projects } from '../../db/schema';
 import { errors } from '../../lib/errors';
 import { usersService } from './service';
 import { toUserPublicById } from './mapper';
@@ -26,7 +26,6 @@ export async function registerUsers(app: FastifyInstance): Promise<void> {
         bio: users.bio,
         avatarUrl: users.avatarUrl,
         siteUrl: users.siteUrl,
-        githubUsername: users.githubUsername,
         createdAt: users.createdAt,
       })
       .from(users)
@@ -36,8 +35,7 @@ export async function registerUsers(app: FastifyInstance): Promise<void> {
     const user = row[0];
     if (!user) throw errors.notFound('Kullanıcı bulunamadı');
 
-    const [tools, followers, following, userPostCount, userProjectCount] = await Promise.all([
-      db.select({ name: userTools.name }).from(userTools).where(eq(userTools.userId, user.id)),
+    const [followers, following, userPostCount, userProjectCount] = await Promise.all([
       db.select({ id: follows.id }).from(follows).where(eq(follows.followingId, user.id)),
       db.select({ id: follows.id }).from(follows).where(eq(follows.followerId, user.id)),
       db.select({ id: posts.id }).from(posts).where(and(eq(posts.authorId, user.id), eq(posts.isDraft, false))),
@@ -48,7 +46,6 @@ export async function registerUsers(app: FastifyInstance): Promise<void> {
       user: {
         ...user,
         siteUrl: user.siteUrl || null,
-        tools: tools.map((t) => t.name),
       },
       stats: {
         followerCount: followers.length,
@@ -130,8 +127,6 @@ export async function registerUsers(app: FastifyInstance): Promise<void> {
         url: projects.url,
         category: projects.category,
         buildWith: projects.buildWith,
-        isOpenSource: projects.isOpenSource,
-        githubUrl: projects.githubUrl,
         description: projects.description,
         logoUrl: projects.logoUrl,
         launched: projects.launched,

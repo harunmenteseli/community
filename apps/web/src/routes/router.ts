@@ -8,7 +8,8 @@ import { RegisterPage } from '../features/auth/RegisterPage';
 import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { VerifyEmailPage } from '../features/auth/VerifyEmailPage';
-import { GithubOAuthCallbackPage } from '../features/auth/GithubOAuthCallbackPage';
+import { NewPostPage } from '../pages/NewPostPage';
+import { TaslaklarPage } from '../pages/TaslaklarPage';
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -56,10 +57,16 @@ const securityRoute = createRoute({
   component: SecurityPage,
 });
 
-const githubOAuthRoute = createRoute({
+const newPostRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/auth/oauth/github',
-  component: GithubOAuthCallbackPage,
+  path: '/post/yeni',
+  component: NewPostPage,
+});
+
+const taslaklarRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/taslaklar',
+  component: TaslaklarPage,
 });
 
 const notFoundRoute = createRoute({
@@ -76,7 +83,8 @@ const routeTree = rootRoute.addChildren([
   resetPasswordRoute,
   verifyEmailRoute,
   securityRoute,
-  githubOAuthRoute,
+  newPostRoute,
+  taslaklarRoute,
   notFoundRoute,
 ]);
 

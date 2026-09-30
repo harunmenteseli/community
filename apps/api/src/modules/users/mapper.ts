@@ -1,7 +1,7 @@
 import type { SQL } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
-import { users, userTools, follows } from '../../db/schema';
+import { users, follows } from '../../db/schema';
 import { errors } from '../../lib/errors';
 
 export async function toUserPublic(username: string) {
@@ -14,7 +14,6 @@ export async function toUserPublic(username: string) {
       avatarUrl: users.avatarUrl,
       siteUrl: users.siteUrl,
       createdAt: users.createdAt,
-      githubUsername: users.githubUsername,
     })
     .from(users)
     .where(eq(users.username, username))
@@ -23,8 +22,7 @@ export async function toUserPublic(username: string) {
   const user = row[0];
   if (!user) throw errors.notFound('Kullanıcı bulunamadı');
 
-  const tools = await db.select({ name: userTools.name }).from(userTools).where(eq(userTools.userId, user.id));
-  return { ...user, siteUrl: user.siteUrl && user.siteUrl.length > 0 ? user.siteUrl : null, tools: tools.map((t) => t.name) };
+  return { ...user, siteUrl: user.siteUrl && user.siteUrl.length > 0 ? user.siteUrl : null };
 }
 
 export async function toUserPublicById(id: string) {
@@ -45,7 +43,6 @@ async function toUserPublicByWhere(where: SQL) {
       avatarUrl: users.avatarUrl,
       siteUrl: users.siteUrl,
       createdAt: users.createdAt,
-      githubUsername: users.githubUsername,
     })
     .from(users)
     .where(where)
@@ -54,7 +51,6 @@ async function toUserPublicByWhere(where: SQL) {
   const user = row[0];
   if (!user) throw errors.notFound('Kullanıcı bulunamadı');
 
-  const tools = await db.select({ name: userTools.name }).from(userTools).where(eq(userTools.userId, user.id));
   const followers = await db
     .select({ id: follows.id })
     .from(follows)
@@ -67,7 +63,6 @@ async function toUserPublicByWhere(where: SQL) {
   return {
     ...user,
     siteUrl: user.siteUrl && user.siteUrl.length > 0 ? user.siteUrl : null,
-    tools: tools.map((t) => t.name),
     followerCount: followers.length,
     followingCount: following.length,
   };

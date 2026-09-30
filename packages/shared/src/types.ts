@@ -6,8 +6,6 @@ export interface UserPublic {
   avatarUrl: string | null;
   siteUrl: string | null;
   createdAt: string;
-  githubUsername: string | null;
-  tools: string[];
 }
 
 export interface LoginDto {
@@ -35,8 +33,6 @@ export interface UpdateProfileDto {
   name: string;
   bio: string;
   siteUrl: string;
-  githubUsername: string;
-  tools: string[];
 }
 
 export interface ChangePasswordDto {
@@ -56,7 +52,8 @@ export interface PollInput {
 export interface CreatePostDto {
   title?: string;
   content: string;
-  category: 'soru' | 'fikir' | 'yaptin' | 'genel';
+  category: 'soru' | 'oneri' | 'kariyer' | 'bug' | 'genel';
+  game?: 'ea-fc' | 'efootball' | 'football-manager';
   isDraft?: boolean;
   images?: string[];
   poll?: PollInput;
@@ -75,8 +72,6 @@ export interface CreateProjectDto {
   url: string;
   category: string;
   buildWith: string[];
-  isOpenSource: boolean;
-  githubUrl?: string;
   description: string;
   logoUrl?: string;
   coverUrls?: string[];

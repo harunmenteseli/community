@@ -5,10 +5,12 @@
 
 ## 1. Kararlar (sprint öncesi)
 
+- **Konsept:** Geliştirici platformu değil; **futbol oyunları (EA FC, eFootball/PES, Football Manager) oyuncuları** topluluğu. Öneri, kariyer hikayeleri, sorun/çözüm ve tartışma paylaşımı ana kullanımlar.
+- **Ürün adı:** "Community" (istek üzerine korundu). Launchpad → **"Kariyer Vitrini"**'ne dönüşecek. GitHub entegrasyonları tamamen kaldırıldı.
 - **Backend:** Node.js + TypeScript + Fastify + Drizzle ORM (PostgreSQL)
 - **Frontend:** Vite + React + TypeScript + Tailwind v4 + TanStack Query
 - **DB:** PostgreSQL (Docker, local); Redis (docker) → rate-limit, cache, Socket.IO adapter, trending
-- **Mail:** Resend; **AI:** Anthropic (Claude); **Auth:** session-based (kendi auth), GitHub OAuth
+- **Mail:** Resend; **AI:** Anthropic (Claude) — haber taraması + haftalık özet; **Auth:** session-based (kendi auth, e-posta ile)
 - **Paket yöneticisi:** pnpm; monorepo (apps/web, apps/api, packages/shared, packages/config)
 - **UI dili:** Türkçe; **Repo:** development branch default
 - **GitHub:** her issue commit mesajında `#(issueId)` içerir
@@ -20,12 +22,10 @@
 | Tablo         | Açıklama |
 |---------------|----------|
 | users         | email, username, name, bio, avatar, siteUrl, passwordHash, role, isActive |
-| user_tools    | kullanıcının kullandığı araçlar (cursor, claude, codex, figma…) |
 | email_verifications | doğrulama token'ları (hash'li) |
 | password_resets | sıfırlama token'ları (hash'li) |
 | sessions      | opaque token (hash'li), expiresAt, revoke desteği |
-| oauth_accounts | provider (github) bağlantıları |
-| posts         | title?, content (≤10k), category (soru/fikir/yaptın/genel), isDraft, source(ai/human) |
+| posts         | title?, content (≤10k), category (soru/oneri/kariyer/bug/genel), game (ea-fc/efootball/football-manager, opsiyonel), isDraft, source(ai/human) |
 | post_flags    | ai üretimi postları işaretleme bilgileri |
 | post_images   | post görselleri (sıralamalı, aspect) |
 | post_polls    | anket (option'lar, selective-vote) |
@@ -35,24 +35,26 @@
 | comments      | yorum / yanıt (parentId) |
 | follows       | takip (followerId, followingId) |
 | reports       | şikayet (hedef tip + id, durum) |
-| projects      | kullanıcı projeleri (logo, cover'lar, buildWith, isOpenSource, githubUrl, launch) |
-| project_images| proje logo + cover görselleri |
-| launch_feedback | launchpad yorum / puan |
+| projects      | kullanıcı vitrin kayıtları (kariyer/başarı, logo, cover'lar, launch) — GitHub alanları kaldırıldı |
+| project_images| viterin logo + cover görselleri |
+| launch_feedback | vitrin yorum / puan |
 | topics        | konu etiketleri |
 | notifications | bildirimler (tip, entity, readAt, payload) |
 | notification_settings | kullanıcı bildirim tercihleri |
 | ai_articles   | haftalık AI özet makaleleri (slug, content, week) |
 
+> Not: `user_tools` (araç etiketleri) ve `oauth_accounts` (GitHub bağlantısı) tabloları konsept değişikliğiyle birlikte kaldırıldı.
+
 ## 3. Sprint planlaması (Milestone'lar)
 
 - **S-0 Scaffolding:** monorepo, CI, docker-compose (pg+redis), design system temeli, ortak paketler
-- **S-1 Auth:** register, login, email doğrulama, forgot/reset, session + revoke, GitHub OAuth
-- **S-2 Post oluşturma:** editor (TipTap + code highlight), görsel yükleme, poll, kategoriler, draft yönetimi
+- **S-1 Auth:** register, login, email doğrulama, forgot/reset, session + revoke (GitHub OAuth yerine e-posta odaklı)
+- **S-2 Post oluşturma:** editor (TipTap), görsel yükleme, poll, kategoriler + oyun etiketi, draft yönetimi
 - **S-3 Feed:** new/trending/following filtreler, infinite pagination, scroll koruması, lazy-load, detay sayfası
-- **S-4 Profil:** portfolio, proje CRUD + buildWith + github showcase (contributions, pinned)
-- **S-5 Launchpad:** launch akışı, feedback/puanlama, takip/takipten çık, şikayet
+- **S-4 Profil:** profil sayfası, kariyer vitrini kayıtları (CRUD), takip
+- **S-5 Kariyer Vitrini:** vitrin akışı, feedback/puanlama, takip/takipten çık, şikayet
 - **S-6 Bildirimler & Ayarlar:** WS (Socket.IO + Redis) real-time, toaster, ayarlar sayfaları
-- **S-7 AI Haftalık:** cron + HN/Reddit tarama + Claude makale üretimi + ayrım (ai post badge)
+- **S-7 AI Haftalık:** cron + haber taraması + Claude özet üretimi + ayrım (ai post badge)
 - **S-8 Kalite:** PWA, a11y, e2e (Playwright), perf, SEO, mobil uyum
 
 ## 4. Ortamlar
@@ -112,6 +114,18 @@
 - Düzeltmeler: `vite.config.ts` `test` bloğu (vitest/config vite5/vite6 tip çakışmasına yol açtı → `UserConfig` cast); Header'da olmayan `asChild` kullanımı temizlendi.
 - Doğrulama: `pnpm --filter @community/web typecheck` ✅, `build` ✅ (PWA generateSW dahil), dev 5173'te çalışıyor; 5173 → 3000 proxy test edildi (yanlış kimlikle 401 INVALID_CREDENTIALS Türkçe mesaj).
 - Commit: `#1` (Web auth akışı). Sıradaki: S-1 kalanı (#2) — session yönetimi UI (oturum süresi/revoke) + GitHub OAuth bağlama; sonra S-2 (#3) post editor.
+
+## 2026-09-30 — Durum (Konsept revizyonu: futbol oyunları topluluğu; GitHub entegrasyonu kaldırıldı)
+
+- **Konsept kararı** (question tool ile kesinleşti): geliştirici topluluğu yerine **futbol oyunları oyuncuları** topluluğu; ürün adı "Community" kaldı; Launchpad → "Kariyer Vitrini"; GitHub entegrasyonları tamamen kaldırıldı; post'lara opsiyonel **oyun etiketi** (`ea-fc` / `efootball` / `football-manager`) eklendi.
+- **Kategoriler değişti:** `soru/fikir/yaptin/genel` → `soru/oneri/kariyer/bug/genel`. `POST_CATEGORIES`, `POST_CATEGORY_LABELS`, `POST_GAMES`, `POST_GAME_LABELS` shared'ta.
+- **API/temizlik:** `users.githubUsername`, `user_tools`, `oauth_accounts` kaldırıldı; `projects`'tan `isOpenSource`/`githubUrl`, `env.ts`'ten `GITHUB_*` temizlendi; `auth/github.ts` + web `GithubOAuthCallbackPage` + LoginPage GitHub butonu silindi. Değiştirilenler: users (mapper/service/routes), posts (service: `game` kolonu + draft sahibine `getById` + `feedBaseSql(includeOwnDrafts)`), projects (service/schema), auth routes/service, redis cacheTtl.
+- **DB:** `drizzle/0001_public_prism.sql` üretildi (yeni `post_game` enum + `posts.game`, `post_category` enum değişimi, oauth/tools/github kolonları düşürme). Migration Docker ayağı kalkınca uygulanacak; eski enum değerleri (`fikir`/`yaptin`) içeren satır varsa dev şema sıfırlanır.
+- **Web:** NewPostPage'e oyun etiketi (Etiket yok / EA FC / eFootball / Football Manager) chip satırı eklendi; autosave + publish + modal etiketi senkron. `/post/yeni` ve `/taslaklar` rotaları **router'a bağlandı** (NewPostPage + yeni TaslaklarPage: React Query listeleme, kategori+oyun rozeti). HomePage / index.html açıklaması futbol topluluğuna çevrildi. TipTap `StarterKit.configure({ link: false })` kaldırıldı (geçersiz option). Post `api.ts` tipine `game` ve `PostCategory`/`PostGame` eklendi.
+- Doğrulama: typecheck ✅ (3 paket), web production build ✅. Migration/DB doğrulaması yapılmadı (Docker kapalı).
+- Sıradaki: migration'ı uygula + smoke; GitHub milestone S-5 "Launchpad" → "Kariyer Vitrini" (milestone #8) ve ilgili issue açıklamalarını güncelle; commit/push.
+
+(session satırı sonu)
 
 ## 2026-09-23 — Durum (S-1 tamam #2: session yönetimi + GitHub OAuth, smoke geçti)
 

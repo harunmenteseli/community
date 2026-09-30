@@ -3,11 +3,6 @@ import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema 
 import { errors } from '../../lib/errors';
 import { authService } from './service';
 import { toUserPublic, toUserPublicByEmail, toUserPublicById } from '../users/mapper';
-import { exchangeGithubCode, getGithubUser } from './github';
-import { users, oauthAccounts } from '../../db/schema';
-import { and, eq } from 'drizzle-orm';
-import { db } from '../../db';
-import { env } from '../../env';
 
 export async function registerAuth(app: FastifyInstance): Promise<void> {
   app.post('/api/auth/register', async (request, reply) => {
@@ -84,79 +79,4 @@ export async function registerAuth(app: FastifyInstance): Promise<void> {
     await authService.revokeSession(request.params.id, id);
     return { success: true };
   });
-
-  // ---- GitHub OAuth ----
-  app.get('/api/auth/github', async (_request, reply) => {
-    if (!env.GITHUB_CLIENT_ID) throw errors.internal('GitHub OAuth yapılandırılmamış');
-    const params = new URLSearchParams({
-      client_id: env.GITHUB_CLIENT_ID,
-      redirect_uri: env.GITHUB_CALLBACK_URL!,
-      scope: 'read:user user:email',
-      allow_signup: 'true',
-    });
-    return reply.redirect(`https://github.com/login/oauth/authorize?${params.toString()}`);
-  });
-
-  app.get('/api/auth/github/callback', async (request, reply) => {
-    const { code } = request.query as { code?: string };
-    if (!code) throw errors.badRequest('GitHub onay kodu eksik');
-
-    const accessToken = await exchangeGithubCode(code);
-    const ghUser = await getGithubUser(accessToken);
-
-    const existing = await db
-      .select({ userId: oauthAccounts.userId })
-      .from(oauthAccounts)
-      .where(and(eq(oauthAccounts.provider, 'github'), eq(oauthAccounts.providerAccountId, String(ghUser.id))))
-      .limit(1);
-
-    let userId: string;
-    if (existing[0]) {
-      userId = existing[0].userId;
-    } else {
-      const email = ghUser.email ?? (ghUser.emails?.find((e) => e.primary)?.email ?? null);
-      const existingEmail = email
-        ? ((await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1))[0]?.id ?? null)
-        : null;
-
-      if (existingEmail) {
-        userId = existingEmail;
-      } else {
-        const username = await ensureUniqueUsername(ghUser.login);
-        const created = await db
-          .insert(users)
-          .values({
-            email: email ?? `${ghUser.login}@github.local`,
-            username,
-            name: ghUser.name ?? ghUser.login,
-            passwordHash: null,
-            avatarUrl: ghUser.avatar_url,
-            githubUsername: ghUser.login,
-            emailVerifiedAt: email ? new Date() : null,
-          })
-          .returning({ id: users.id });
-        userId = created[0]!.id;
-      }
-      await db.insert(oauthAccounts).values({
-        userId,
-        provider: 'github',
-        providerAccountId: String(ghUser.id),
-      });
-    }
-
-    const session = await authService.issueSession(userId, request.ip, request.headers['user-agent']);
-
-    // fragment ile yönlendirme: token sunucuya hiç yazılmaz
-    return reply.redirect(`${env.APP_URL}/auth/oauth/github#token=${session.token}`);
-  });
-}
-
-async function ensureUniqueUsername(base: string): Promise<string> {
-  const candidate = base.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 30) || 'dev';
-  for (let i = 0; i < 20; i++) {
-    const name = i === 0 ? candidate : `${candidate}${i + 1}`;
-    const exists = await db.select({ id: users.id }).from(users).where(eq(users.username, name)).limit(1);
-    if (!exists[0]) return name;
-  }
-  throw errors.conflict('Kullanıcı adı oluşturulamadı');
 }

@@ -11,7 +11,7 @@ import {
   users,
 } from '../../db/schema';
 import type { CreatePostDto, UpdatePostDto } from '@community/shared';
-import { POST_CATEGORIES, POST_CONTENT_MAX } from '@community/shared';
+import { POST_CATEGORIES, POST_GAMES, POST_CONTENT_MAX } from '@community/shared';
 import { errors } from '../../lib/errors';
 import { events } from '../../lib/events';
 import { notificationsService } from '../notifications/service';
@@ -22,10 +22,11 @@ export interface PostWithMeta {
   title: string | null;
   content: string;
   category: (typeof POST_CATEGORIES)[number];
+  game: (typeof POST_GAMES)[number] | null;
   source: 'human' | 'ai';
   createdAt: Date;
   updatedAt: Date;
-  author: { id: string; username: string; name: string; avatarUrl: string | null; githubUsername: string | null };
+  author: { id: string; username: string; name: string; avatarUrl: string | null };
   likeCount: number;
   commentCount: number;
   bookmarkCount: number;
@@ -45,11 +46,11 @@ export interface PollWithState {
   closed: boolean;
 }
 
-function feedBaseSql(viewerId: string) {
+function feedBaseSql(viewerId: string, opts?: { includeOwnDrafts?: boolean }) {
   return sql`
     SELECT
-      p.id, p.title, p.content, p.category, p.source, p.created_at, p.updated_at,
-      u.id AS author_id, u.username, u.name, u.avatar_url, u.github_username,
+      p.id, p.title, p.content, p.category, p.game, p.source, p.created_at, p.updated_at,
+      u.id AS author_id, u.username, u.name, u.avatar_url,
       (SELECT count(*) FROM post_likes l WHERE l.post_id = p.id) AS like_count,
       (SELECT count(*) FROM comments c WHERE c.post_id = p.id) AS comment_count,
       (SELECT count(*) FROM bookmarks b WHERE b.post_id = p.id) AS bookmark_count,
@@ -58,7 +59,7 @@ function feedBaseSql(viewerId: string) {
       EXISTS(SELECT 1 FROM follows f WHERE f.follower_id = ${viewerId} AND f.following_id = p.author_id) AS followed_by_me
     FROM posts p
     JOIN users u ON u.id = p.author_id
-    WHERE p.is_draft = false
+    ${opts?.includeOwnDrafts ? sql`WHERE (p.is_draft = false OR p.author_id = ${viewerId})` : sql`WHERE p.is_draft = false`}
   `;
 }
 
@@ -76,6 +77,7 @@ export class PostsService {
           title: input.title || null,
           content: input.content,
           category: input.category,
+          game: input.game ?? null,
           isDraft: input.isDraft ?? false,
         })
         .returning({ id: posts.id });
@@ -108,6 +110,7 @@ export class PostsService {
           title: input.title ?? undefined === undefined ? undefined : input.title ?? post.title,
           content: input.content ?? post.content,
           category: input.category ?? post.category,
+          game: input.game === undefined ? post.game : input.game,
           updatedAt: new Date(),
         })
         .where(eq(posts.id, postId));
@@ -141,7 +144,7 @@ export class PostsService {
 
   async getById(postId: string, viewerId?: string): Promise<PostWithMeta> {
     const rows = await this.db.execute<PostWithMetaRow>(sql`
-      ${feedBaseSql(viewerId ?? '')}
+      ${feedBaseSql(viewerId ?? '', { includeOwnDrafts: Boolean(viewerId) })}
       AND p.id = ${postId}
       LIMIT 1
     `);
@@ -152,7 +155,7 @@ export class PostsService {
 
   async listDrafts(userId: string) {
     const rows = await this.db.execute<PostWithMetaRow>(sql`
-      ${feedBaseSql(userId)}
+      ${feedBaseSql(userId, { includeOwnDrafts: true })}
       AND p.author_id = ${userId} AND p.is_draft = true
       ORDER BY p.updated_at DESC
     `);
@@ -355,6 +358,7 @@ export class PostsService {
       title: row.title,
       content: row.content,
       category: row.category,
+      game: row.game ?? null,
       source: row.source,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -363,7 +367,6 @@ export class PostsService {
         username: row.username,
         name: row.name,
         avatarUrl: row.avatar_url,
-        githubUsername: row.github_username,
       },
       likeCount: Number(row.like_count ?? 0),
       commentCount: Number(row.comment_count ?? 0),
@@ -393,6 +396,7 @@ type PostWithMetaRow = Record<string, unknown> & {
   title: string | null;
   content: string;
   category: PostWithMeta['category'];
+  game: PostWithMeta['game'];
   source: PostWithMeta['source'];
   created_at: Date;
   updated_at: Date;
@@ -400,7 +404,6 @@ type PostWithMetaRow = Record<string, unknown> & {
   username: string;
   name: string;
   avatar_url: string | null;
-  github_username: string | null;
   like_count: number | null;
   comment_count: number | null;
   bookmark_count: number | null;

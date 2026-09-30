@@ -2,7 +2,7 @@
   "name": "community",
   "version": "0.1.0",
   "private": true,
-  "description": "Geliştiriciler için aktif topluluk platformu",
+  "description": "Futbol oyunları (EA FC, eFootball, Football Manager) topluluğu platformu",
   "packageManager": "pnpm@11.4.0",
   "engines": {
     "node": ">=24"

@@ -7,7 +7,6 @@ import {
   sessions,
   emailVerifications,
   passwordResets,
-  oauthAccounts,
   notificationSettings,
 } from '../../db/schema';
 import type { RegisterDto, LoginDto } from '@community/shared';

@@ -19,8 +19,6 @@ export const projects = pgTable('projects', {
   url: text('url').notNull(),
   category: varchar('category', { length: 40 }).notNull(),
   buildWith: jsonb('build_with').$type<string[]>().notNull().default([]),
-  isOpenSource: boolean('is_open_source').notNull().default(false),
-  githubUrl: text('github_url'),
   description: text('description').notNull(),
   logoUrl: text('logo_url'),
   launched: boolean('launched').notNull().default(false),
