@@ -175,3 +175,35 @@
 
 - Commit: `#16`. Siradaki: #16`in kalan kismi (Playwright e2e + GitHub Actions CI), sonra
   #5 feed sayfasi.
+
+## 2026-09-30 - Durum (Playwright e2e + GitHub Actions CI, #16 tamamlandi)
+
+- Playwright kuruldu ve 17 e2e testi yazildi (`e2e/auth.spec.ts`, `e2e/posts.spec.ts`,
+  `e2e/fixtures.ts`). Hepsi gecti.
+- `vite.config.ts` artik proxy hedefini `VITE_API_PROXY_TARGET` ve portu `PORT`
+  ortam degiskenlerinden aliyor; boylece e2e icin 4310/4311 portlari kullanilabiliyor.
+- API`de `dev:port` script`i eklemeye gerek kalmadi: `env.ts` zaten `PORT` okuyor,
+  Playwright `env` ile veriyor.
+- `test.bat` genisletildi: `test.bat e2e` ve `test.bat all` (unit + e2e). Docker ve
+  migration`i kendisi hazirliyor. Hepsi dogrulandi.
+
+### e2e sirasinda bulunan ve duzeltilen gercek hata
+
+- `NotFoundPage` hic baglanmamisdi: `router.ts` icinde `notFoundRoute` (`path: "*"`)
+  tanimli olsa da kullanilmiyordu ve kok route`ta `notFoundComponent` yoktu. Bilinmeyen
+  rotalarda TanStack`in varsayilan "Not Found" metni cikiyordu. Kok route`a
+  `notFoundComponent: NotFoundPage` eklendi.
+
+### e2e sirasinda tespit edilen, #1 kapsaminda acik olan eksik
+
+- `NewPostPage` ve `TaslaklarPage` kimliksiz erisimi engellemiyor. API tarafi 401 donuyor
+  (guvenli) ama kullanici bos sayfa yerine hata mesaji goruyor. `beforeLoad` korumasi ya da
+  yonlendirme eklenmeli. Bu commit`te degistirilmedi, #1 ile islenacak.
+
+### CI (.github/workflows/ci.yml)
+
+- Iki job: `kalite` (typecheck, lint, unit test, build) ve `e2e` (postgres 5433 + redis 6380
+  service container, migration, Playwright). Rapor artifact olarak yukleniyor.
+- Root `package.json`a `test:e2e` ve `test:e2e:ui` script`leri eklendi.
+
+- Commit: `#16`. S-2 test altyapisi tamamlandi. Siradaki: #5 feed sayfasi.

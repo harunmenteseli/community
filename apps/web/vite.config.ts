@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const apiTarget = process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000';
+
 const config: UserConfig = {
   plugins: [
     react(),
@@ -28,11 +30,11 @@ const config: UserConfig = {
     }),
   ],
   server: {
-    port: 5173,
+    port: Number(process.env.PORT ?? 5173),
     proxy: {
-      '/api': { target: 'http://localhost:3000', changeOrigin: true },
-      '/uploads': { target: 'http://localhost:3000', changeOrigin: true },
-      '/socket.io': { target: 'http://localhost:3000', ws: true },
+      '/api': { target: apiTarget, changeOrigin: true },
+      '/uploads': { target: apiTarget, changeOrigin: true },
+      '/socket.io': { target: apiTarget, ws: true },
     },
   },
   test: {

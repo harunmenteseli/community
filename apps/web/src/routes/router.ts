@@ -13,6 +13,7 @@ import { TaslaklarPage } from '../pages/TaslaklarPage';
 
 const rootRoute = createRootRoute({
   component: RootLayout,
+  notFoundComponent: NotFoundPage,
 });
 
 const homeRoute = createRoute({

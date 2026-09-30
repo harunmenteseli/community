@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kalite:
+    name: Typecheck / Lint / Unit test / Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Bagimliliklari kur
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit testler
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  e2e:
+    name: Playwright e2e
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: community
+          POSTGRES_PASSWORD: community
+          POSTGRES_DB: community
+        ports:
+          - 5433:5433
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      E2E_WEB_PORT: '4310'
+      E2E_API_PORT: '4311'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Bagimliliklari kur
+        run: pnpm install --frozen-lockfile
+
+      - name: Playwright tarayici kur
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Migration uygula
+        env:
+          DATABASE_URL: postgres://community:community@localhost:5433/community
+          REDIS_URL: redis://localhost:6380
+          SESSION_SECRET: ci-secret-insecure-change-me-32chars!!!!!!
+        run: pnpm db:migrate
+
+      - name: e2e testler
+        run: pnpm test:e2e
+
+      - name: Playwright raporu yukle
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
