@@ -37,6 +37,22 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
+    // @fastify/rate-limit yaniti hata olarak firlatiyor; hazir statusCode ve govde
+    // korunmali, yoksa limit asimlari 500 "İşlenmemiş hata" olarak donuyor.
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      (error as { statusCode?: unknown }).statusCode === 429
+    ) {
+      const rateLimitError = error as { error?: { code?: string; message?: string } };
+      return reply.status(429).send({
+        error: {
+          code: rateLimitError.error?.code ?? 'RATE_LIMITED',
+          message: rateLimitError.error?.message ?? 'Çok fazla istek. Lütfen biraz bekleyin.',
+        },
+      });
+    }
+
     logger.error({ err: error as Error }, 'İşlenmemiş hata');
 
     if (env.NODE_ENV === 'development') {

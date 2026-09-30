@@ -33,6 +33,8 @@ export interface UpdateProfileDto {
   name: string;
   bio: string;
   siteUrl: string;
+  /** Avatar icin `POST /api/uploads?kind=avatar` sonrasi gelen URL. */
+  avatarUrl?: string;
 }
 
 export interface ChangePasswordDto {

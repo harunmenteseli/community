@@ -49,12 +49,14 @@ export function Header() {
                   Yeni Post
                 </Button>
               </Link>
-              <Avatar
-                src={user.avatarUrl ?? undefined}
-                name={user.name}
-                className="h-8 w-8 text-xs"
-              />
-              <span className="hidden text-sm font-medium sm:inline">{user.name}</span>
+              <Link to="/u/$username" params={{ username: user.username }} className="flex items-center gap-2">
+                <Avatar
+                  src={user.avatarUrl ?? undefined}
+                  name={user.name}
+                  className="h-8 w-8 text-xs"
+                />
+                <span className="hidden text-sm font-medium sm:inline">{user.name}</span>
+              </Link>
               <Button variant="ghost" size="icon-sm" aria-label="Çıkış yap" onClick={onLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>

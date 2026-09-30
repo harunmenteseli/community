@@ -12,6 +12,8 @@ import { NewPostPage } from '../pages/NewPostPage';
 import { TaslaklarPage } from '../pages/TaslaklarPage';
 import { FeedPage } from '../pages/FeedPage';
 import { PostDetailPage } from '../pages/PostDetailPage';
+import { ProfilePage } from '../pages/ProfilePage';
+import { EditProfilePage } from '../pages/EditProfilePage';
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -86,6 +88,18 @@ const postDetailRoute = createRoute({
   component: PostDetailPage,
 });
 
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/u/$username',
+  component: ProfilePage,
+});
+
+const editProfileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/ayarlar/profil',
+  component: EditProfilePage,
+});
+
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '*',
@@ -104,6 +118,8 @@ const routeTree = rootRoute.addChildren([
   taslaklarRoute,
   feedRoute,
   postDetailRoute,
+  profileRoute,
+  editProfileRoute,
   notFoundRoute,
 ]);
 

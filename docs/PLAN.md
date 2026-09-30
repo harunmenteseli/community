@@ -371,3 +371,60 @@ ull
 - check.bat yesil (typecheck + lint + build), 90 unit test (29 shared + 25 api +
   36 web) ve 62 e2e test gecti.
 - Commit: #6. Siradaki: #7 (profil rotasi).
+
+## 2026-09-30 - Durum (#7 tamamlandi)
+
+### #7 Profil sayfasi + istatistikler + takip
+
+- Yeni rotalar: `/u/$username` (profil) ve `/ayarlar/profil` (duzenleme).
+  Profil sayfasi bio, avatar, site baglantisi, uyelik tarihi, `post/vitrin/
+  takipci/takip` sayaclari ve vitrin kayitlari grid'ini gosteriyor.
+- `useFollow` optimistic: `onMutate` takip durumunu ve takipci sayacini aninda
+  guncelliyor, hata halinde eski cache konuyor, `onSettled` ile profil ve feed
+  invalidate ediliyor. Kendine takip butonu hic gosterilmiyor; oturumsuz
+  kullanici `?redirect=` ile girise yonlendiriliyor.
+- Profil duzenleme: ad, bio (oyun tercihleri buraya yaziliyor), site baglantisi
+  ve avatar yukleme. Avatar once `POST /api/uploads?kind=avatar` ile gonderiliyor,
+  sonra `PATCH /api/users/me` ile `avatarUrl` yaziliyor; `updateProfileSchema`
+  `.strict()` oldugu icin `avatarUrl` opsiyonel alan olarak eklendi ve
+  `usersService.updateProfile` yalnizca gonderildiginde yaziyor.
+- Yazar baglantilari: `PostCard`, `PostDetailPage` ve `Header` artik
+  `/u/$username` rotasina gidiyor (PostCard'daki #7 notu kaldirildi).
+
+### Bulunan gercek hatalar
+
+- **Takip butonu ters calisiyordu:** `useFollow.toggle` mevcut durumu okuyup
+  `mutate(!current)` yerine yanlis yonu gonderiyordu; "Takip et" `unfollow`
+  cagirip "Takiptesin" `follow` cagriyordu. Artik mutation hedef durumu
+  (`wantFollowing`) tasiyor.
+- **`@hookform/resolvers` v3 + zod v4 uyumsuz:** paket resolver'i dogrudan
+  ZodError firlatiyor, form gonderimi sessizce hic dogrulanmiyordu. Proje ici
+  `apps/web/src/lib/validation.ts` resolver'i kullaniliyor (auth sayfalari
+  zaten onu kullaniyor).
+- **Multipart yukleme kirikti:** `http.post` govdeyi `JSON.stringify` ediyor,
+  `FormData` `"{}"` olarak gidiyor ve Fastify "the request is not multipart"
+  diyordu; yani post gorsel yukleme de calismiyordu. `http.upload` eklendi,
+  `postsApi.uploadImage` ve `usersApi.uploadAvatar` bunu kullanıyor.
+- **Rate limit 429 yerine 500 donuyordu:** `@fastify/rate-limit` yaniti hata
+  olarak firlatiyor, global error handler da bunu "İşlenmemiş hata" 500'e
+  ceviriyordu. `errorResponseBuilder` ciktisina `statusCode: 429` eklendi ve
+  handler `statusCode === 429` durumunu 429 olarak donduruyor.
+- **Testler limiti asmaya basliyordu:** tum e2e istekleri tek IP'den geliyor ve
+  global limit 300/dk idi; 76 testlik paket limiti asiyordu. Limit artik sadece
+  production'da 300/dk, diger ortamlarda 2000/dk.
+
+### Dogrulama
+
+- Yeni testler: `updateProfileSchema` unit (6) ve `e2e/profile.spec.ts` (14):
+  istatistikler, post sayaci, kendi profili, takip/takipten cik (optimistic +
+  kalici), oturumsuz giris cagrisi, 404, yazardan profile gecis, profil
+  guncelleme, gecersiz baglanti, avatar yukleme, API 401/400/404.
+- `e2e/auth.spec.ts` sonuna rate limit testi eklendi (limit asimi 429 donmeli).
+- Playwright tuzagi: Header'daki "Giriş yap" linki sayfa iciyle cakisiyor;
+  `page.getByRole('main')` ile kapsam daraltildi.
+
+### Sonuc
+
+- check.bat yesil (typecheck + lint + build), 96 unit test (35 shared + 25 api +
+  36 web) ve 77 e2e test gecti.
+- Commit: #7. Siradaki: #8.

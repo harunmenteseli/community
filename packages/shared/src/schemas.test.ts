@@ -11,6 +11,7 @@ import {
   loginSchema,
   registerSchema,
   updatePostSchema,
+  updateProfileSchema,
 } from './schemas';
 
 describe('sabitler', () => {
@@ -132,6 +133,34 @@ describe('createCommentSchema', () => {
     const postId = '550e8400-e29b-41d4-a716-446655440000';
 
     expect(createCommentSchema.safeParse({ postId, content: '   ' }).success).toBe(false);
+  });
+});
+
+describe('updateProfileSchema', () => {
+  const base = { name: 'Ada', bio: 'Yazilimci', siteUrl: 'https://example.com' };
+
+  it('avatarUrl verilmeden de kabul eder', () => {
+    expect(updateProfileSchema.safeParse(base).success).toBe(true);
+  });
+
+  it('avatarUrl kabul eder', () => {
+    expect(updateProfileSchema.safeParse({ ...base, avatarUrl: 'https://cdn.example.com/a.png' }).success).toBe(true);
+  });
+
+  it('bos avatarUrl ile avatar silinebilir', () => {
+    expect(updateProfileSchema.safeParse({ ...base, avatarUrl: '' }).success).toBe(true);
+  });
+
+  it('gecersiz avatarUrl reddeder', () => {
+    expect(updateProfileSchema.safeParse({ ...base, avatarUrl: 'avatar.png' }).success).toBe(false);
+  });
+
+  it('bos ad reddeder', () => {
+    expect(updateProfileSchema.safeParse({ ...base, name: '  ' }).success).toBe(false);
+  });
+
+  it('bilinmeyen alani reddeder', () => {
+    expect(updateProfileSchema.safeParse({ ...base, followerCount: 5 }).success).toBe(false);
   });
 });
 

@@ -73,6 +73,6 @@ export const postsApi = {
   uploadImage: async (file: File): Promise<StoredFile> => {
     const form = new FormData();
     form.append('file', file);
-    return http.post<StoredFile>(`/api/uploads?kind=post`, form);
+    return http.upload<StoredFile>(`/api/uploads?kind=post`, form);
   },
 };

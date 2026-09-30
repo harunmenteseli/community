@@ -16,6 +16,8 @@ export class UsersService {
         name: input.name,
         bio: input.bio || null,
         siteUrl: input.siteUrl || null,
+        // Avatar opsiyonel: gonderilmediginde mevcut resim korunur.
+        ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl || null } : {}),
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));

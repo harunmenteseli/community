@@ -16,6 +16,8 @@ coverage/
 !.env.production.example
 
 # Datenbank/upload local
+# Gercek yol apps/api/src/modules/uploads/storage.ts -> apps/uploads
+apps/uploads/
 apps/api/uploads/
 apps/api/*.db
 

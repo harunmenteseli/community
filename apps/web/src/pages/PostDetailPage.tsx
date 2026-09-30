@@ -65,8 +65,20 @@ export function PostDetailPage() {
             <Avatar src={post.author.avatarUrl ?? undefined} name={post.author.name} size="sm" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="truncate text-sm font-semibold">{post.author.name}</span>
-                <span className="truncate text-sm text-ink-500 dark:text-ink-400">@{post.author.username}</span>
+                <Link
+                  to="/u/$username"
+                  params={{ username: post.author.username }}
+                  className="truncate text-sm font-semibold hover:underline"
+                >
+                  {post.author.name}
+                </Link>
+                <Link
+                  to="/u/$username"
+                  params={{ username: post.author.username }}
+                  className="truncate text-sm text-ink-500 hover:underline dark:text-ink-400"
+                >
+                  @{post.author.username}
+                </Link>
                 <span aria-hidden className="text-ink-400">·</span>
                 <time dateTime={post.createdAt} className="text-xs text-ink-500 dark:text-ink-400">
                   {timeAgo(post.createdAt)}

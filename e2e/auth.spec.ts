@@ -112,6 +112,28 @@ test.describe('auth sayfalari', () => {
     await expect(page.getByRole('main').getByRole('link', { name: 'Giriş yap' })).toHaveCount(0);
   });
 
+  test('api: limit asimi 429 RATE_LIMITED doner', async ({ api }) => {
+    // verify-email ucunda 10/dk limiti var; limitin dondugu anlatilir.
+    // Once hata durumunda status 400 oldugu icin sayac burada tuketiliyor.
+    let limited = 0;
+    let lastStatus = 0;
+    let lastCode = '';
+
+    for (let i = 0; i < 14; i += 1) {
+      const res = await api.post('/api/auth/verify-email', { data: { token: `gecersiz-token-${i}` } });
+      lastStatus = res.status();
+      if (lastStatus === 429) {
+        limited += 1;
+        lastCode = ((await res.json()) as { error?: { code?: string } }).error?.code ?? '';
+        break;
+      }
+    }
+
+    expect(lastStatus).toBe(429);
+    expect(lastCode).toBe('RATE_LIMITED');
+    expect(limited).toBe(1);
+  });
+
   test('login redirect parametresi ile istenen sayfaya doner', async ({ page, api }) => {
     const account = await createAccount(api);
 

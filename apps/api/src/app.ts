@@ -42,11 +42,14 @@ export async function buildApp(options: BuildOptions = {}): Promise<FastifyInsta
 
   await app.register(rateLimit, {
     global: true,
-    max: 300,
+    // Test ve gelistirme ayni IP'den gelir; e2e paketi limiti asmamali.
+    max: env.NODE_ENV === 'production' ? 300 : 2000,
     timeWindow: '1 minute',
     allowList: [],
     redis: env.NODE_ENV === 'production' ? redis : undefined,
+    // statusCode verilmezse govde 500 "İşlenmemiş hata" olarak donuyor.
     errorResponseBuilder: () => ({
+      statusCode: 429,
       error: { code: 'RATE_LIMITED', message: 'Çok fazla istek. Lütfen biraz bekleyin.' },
     }),
   });

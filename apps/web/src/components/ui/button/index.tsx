@@ -1,7 +1,10 @@
 import { forwardRef } from 'react';
-import { buttonVariants, type ButtonVariants } from './variants';
+import { buttonClasses, buttonVariants, type ButtonVariants } from './variants';
 import { cn } from '../../../lib/cn';
 import { Spinner } from '../spinner';
+
+// Link gibi buton olmayan ogelerde ayni gorunum icin: buttonClasses({ ... })
+export { buttonClasses };
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,

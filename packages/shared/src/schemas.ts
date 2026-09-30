@@ -65,6 +65,8 @@ export const updateProfileSchema = z
     name: z.string().trim().min(1).max(60),
     bio: z.string().trim().max(500),
     siteUrl: z.string().trim().url().or(z.literal('')),
+    // Avatar once `POST /api/uploads?kind=avatar` ile yuklenir, sonra URL yazilir.
+    avatarUrl: z.string().trim().url().or(z.literal('')).optional(),
   })
   .strict();
 
