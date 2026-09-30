@@ -547,3 +547,56 @@ ull
 - check.bat yesil (typecheck + lint + build), 96 unit test (35 shared + 25 api +
   36 web) ve 92 e2e test gecti.
 - Commit: #9. Siradaki: #10 (takip/takipten cik + sikayet UI).
+
+## 2026-09-30 - Durum (#10 tamamlandi)
+
+### Yapilanlar
+
+- **Sikayet backend'i** (`apps/api/src/modules/reports/`): `POST /api/reports`
+  (post / kullanici / vitrin kaydi hedefli, `spam|abuse|scam|nsfw|other`
+  sebebi, 1000 karakter aciklama), hedef varlik kontrolu, ayni hedef icin
+  bekleyen sikayet engeli (409), `GET /api/reports/mine` ve yonetici icin
+  `POST /api/reports/:id/resolve`. `reports` tablosuna `status`
+  (pending/approved/rejected) ve `resolved_by` kolonlari eklendi
+  (`0002_warm_namorita.sql`).
+- **S-6**: rapor sonuclandirildiginde raporlayan kullaniciya `reportUpdate`
+  tipinde bildirim gider. Bildirim bir kullanici eylemi degil, moderasyon
+  sonucu oldugu icin `actorId: null` ile gonderiliyor; aksi halde bildirimin
+  kendini gonderene gitmemesi filtresi devreye giriyordu.
+- **Sikayet modalı** (`features/reports/ReportModal.tsx`): sebep secimi,
+  aciklama alani, "Diger" icin aciklama zorunlulugu, oturumsuz kullanici ve
+  kendini sikayet etme durumlarinda bilgilendirme. `ReportButton` ile post
+  karti, post detay sayfasi, profil ve Kariyer Vitrini kartlarina baglandi.
+- **Post uzerinde takip butonu** (`AuthorFollowButton` + `useAuthorFollow`):
+  takip/takipten cik aninda (optimistic) calisiyor, hata halinde feed ve post
+  detay cache'ini geri aliyor. Kendi gonderisinde ve oturumsuz durumda
+  gosterilmiyor.
+- `AuthUser` tipine `role` eklendi; yonetici kontrolu role dayaniyor.
+- Kullanilmayan `POST /api/users/:username/report` ucu ve
+  `usersService.report` kaldirildi: dogrulama tek yerde (`reports` servisi)
+  toplandi, aksi halde iki farkli rapor yolu birbirini dogrulamadan besliyordu.
+
+### Testler
+
+- Yeni: `e2e/reports.spec.ts` (7 test) - post sikayeti (modal dogrulamalari:
+  sebep secilmeden "Bir sebep sec", "Diger" icin aciklama uyarisi, sonra basarili
+  gonderim ve `/api/reports/mine` icinde pending kayit), ayni hedefe ikinci
+  sikayetin 409 olmasi, vitrin kaydi sikayeti, oturumsuz kullanicinin gonderi
+  bildirememesi, kendi profilinde sikayet butonunun olmamasi, API dogrulamalari
+  (401 / gecersiz hedef turu / gecersiz sebep / olmayan hedef 404 / kendini
+  sikayet 400) ve yonetici akisi (403, resolve, cift sonuclandirma 409,
+  raporlayana `reportUpdate` bildirimi).
+- `e2e/feed.spec.ts` -> post kartindan yazari takip et/takipten cik testi
+  (optimistic dugme metni + API dogrulamasi).
+- Yeni unit testler: `options.test.ts` (sikayet dogrulamasi, kendini sikayet
+  kontrolu) ve `follows.test.ts` (takip cache yamalari, referans korumasi).
+- `e2e/fixtures.ts` -> `createAdmin()`: moderasyon ucu yonetici rolu istiyor,
+  rolu atayan API yok. Testte hesap dogrudan veritabaninda yoneticiye
+  yukseltiliyor (`postgres` kok devDependency olarak eklendi); kalici bir admin
+  hesabi paylasilan test veritabanini kirletirdi.
+
+### Sonuc
+
+- check.bat yesil, 111 unit test (35 shared + 25 api + 51 web) ve 100 e2e test
+  gecti.
+- Commit: #10. Siradaki: #11.

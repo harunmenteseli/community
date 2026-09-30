@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { DB } from '../../db';
 import { db } from '../../db';
-import { users, follows, reports, posts, comments } from '../../db/schema';
+import { users, follows, posts, comments } from '../../db/schema';
 import type { UpdateProfileDto } from '@community/shared';
 import { errors, isUniqueViolation } from '../../lib/errors';
 import argon2 from 'argon2';
@@ -70,11 +70,6 @@ export class UsersService {
       .where(and(eq(follows.followerId, followerId), eq(follows.followingId, followingId)))
       .limit(1);
     return Boolean(row[0]);
-  }
-
-  async report(reporterId: string, input: { targetType: string; targetId: string; reason: string; message?: string }) {
-    if (reporterId === input.targetId) throw errors.badRequest('Kendini şikayet edemezsin');
-    await this.db.insert(reports).values({ reporterId, ...input });
   }
 
   async getStats(userId: string) {

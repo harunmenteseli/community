@@ -10,6 +10,8 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Spinner } from '../components/ui/spinner';
 import { cn } from '../lib/cn';
 import { postsApi } from '../features/posts/api';
+import { AuthorFollowButton } from '../features/users/AuthorFollowButton';
+import { ReportButton } from '../features/reports/ReportButton';
 import { CommentSection } from '../features/posts/CommentSection';
 import { PollBox } from '../features/posts/PollBox';
 import { ReactionButtons } from '../features/posts/ReactionButtons';
@@ -89,11 +91,20 @@ export function PostDetailPage() {
                 {post.game ? <Badge>{POST_GAME_LABELS[post.game]}</Badge> : null}
               </div>
             </div>
-            {user?.id === post.author.id ? (
-              <Button variant="ghost" size="sm" onClick={() => remove.mutate()} disabled={remove.isPending}>
-                Sil
-              </Button>
-            ) : null}
+            <div className="flex shrink-0 items-center gap-1">
+              {user?.id === post.author.id ? (
+                <Button variant="ghost" size="sm" onClick={() => remove.mutate()} disabled={remove.isPending}>
+                  Sil
+                </Button>
+              ) : (
+                <ReportButton
+                  targetType="post"
+                  targetId={post.id}
+                  subject={post.title || `${post.author.name} gönderisi`}
+                />
+              )}
+              <AuthorFollowButton post={post} />
+            </div>
           </div>
 
           {post.title ? <h1 className="mt-4 text-xl font-semibold leading-snug tracking-tight">{post.title}</h1> : null}

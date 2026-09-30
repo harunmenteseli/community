@@ -16,6 +16,7 @@ import { registerComments } from './modules/comments/routes';
 import { registerProjects } from './modules/projects/routes';
 import { registerLaunchpad } from './modules/launchpad/routes';
 import { registerNotifications } from './modules/notifications/routes';
+import { registerReports } from './modules/reports/routes';
 import { registerUploads } from './modules/uploads/routes';
 import { registerAi } from './modules/ai/routes';
 
@@ -68,6 +69,7 @@ export async function buildApp(options: BuildOptions = {}): Promise<FastifyInsta
   await registerProjects(app);
   await registerLaunchpad(app);
   await registerNotifications(app);
+  await registerReports(app);
   await registerUploads(app);
   await registerAi(app);
 

@@ -73,3 +73,31 @@ export async function signInViaUi(page: import('@playwright/test').Page, account
   await page.locator('button[type="submit"]').click();
   await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15_000 });
 }
+
+/**
+ * Moderasyon uclari yonetici rolu istiyor ama rolu atayan bir API yok. Testler
+ * icin hesabi dogrudan veritabaninda yoneticiye yukseltiyoruz; surekli bir
+ * admin hesabi olusturmak paylasilan test veritabanini kirletirdi.
+ *
+ * Baglanti bilgisi DATABASE_URL'den okunur; yoksa docker-compose'in yerel
+ * portu (5433) kullanilir.
+ */
+export async function createAdmin(api: APIRequestContext, prefix = 'admin'): Promise<TestAccount> {
+  const account = await createAccount(api, prefix);
+  const url = new URL(process.env.DATABASE_URL ?? 'postgresql://community:community@localhost:5433/community');
+  const postgres = (await import('postgres')).default;
+  const client = postgres({
+    host: url.hostname,
+    port: Number(url.port || 5432),
+    database: url.pathname.replace('/', ''),
+    username: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+    max: 1,
+  });
+  try {
+    await client`UPDATE users SET role = 'admin' WHERE username = ${account.username}`;
+  } finally {
+    await client.end({ timeout: 5 });
+  }
+  return account;
+}

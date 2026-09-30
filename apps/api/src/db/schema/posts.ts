@@ -128,6 +128,8 @@ export const reports = pgTable('reports', {
   targetId: uuid('target_id').notNull(),
   reason: varchar('reason', { length: 200 }).notNull(),
   message: text('message'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  resolvedBy: uuid('resolved_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
 });

@@ -108,15 +108,6 @@ export async function registerUsers(app: FastifyInstance): Promise<void> {
     return { success: true };
   });
 
-  app.post<{ Params: { username: string } }>('/api/users/:username/report', async (request) => {
-    const { id } = request.requireAuthUser();
-    const target = await getUserByUsername(request.params.username);
-    const { reason, message } = request.body as { reason: string; message?: string };
-    if (!reason || reason.length > 200) throw errors.badRequest('Gerekçe gerekli (≤200 karakter)');
-    await usersService.report(id, { targetType: 'user', targetId: target.id, reason, message });
-    return { success: true };
-  });
-
   app.get<{ Params: { username: string } }>('/api/users/:username/projects', async (request) => {
     const { username } = request.params;
     const user = await getUserByUsername(username);

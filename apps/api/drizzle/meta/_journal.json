@@ -15,6 +15,13 @@
       "when": 1790755764011,
       "tag": "0001_public_prism",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790773975819,
+      "tag": "0002_warm_namorita",
+      "breakpoints": true
     }
   ]
 }

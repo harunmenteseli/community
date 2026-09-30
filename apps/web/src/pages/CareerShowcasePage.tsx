@@ -10,6 +10,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Spinner } from '../components/ui/spinner';
 import { userAtom } from '../state/atoms';
 import { FeedbackModal } from '../features/launchpad/FeedbackModal';
+import { ReportButton } from '../features/reports/ReportButton';
 import { launchpadApi, type LaunchpadProject, type LaunchpadSort } from '../features/launchpad/api';
 
 const PAGE_SIZE = 12;
@@ -198,7 +199,14 @@ export function CareerShowcasePage() {
                       >
                         Vitrinden kaldır
                       </Button>
-                    ) : null}
+                    ) : (
+                      <ReportButton
+                        targetType="project"
+                        targetId={project.id}
+                        subject={project.name}
+                        className="px-2"
+                      />
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

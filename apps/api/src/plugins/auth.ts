@@ -9,6 +9,7 @@ import { errors } from '../lib/errors';
 export interface AuthUser {
   id: string;
   sessionId: string;
+  role: string;
 }
 
 declare module 'fastify' {
@@ -68,7 +69,7 @@ async function resolveSession(
 
   // Süresi dolmamış ve kullanıcı aktif mi?
   const user = await db
-    .select({ id: users.id, isActive: users.isActive })
+    .select({ id: users.id, isActive: users.isActive, role: users.role })
     .from(users)
     .where(and(eq(users.id, session.userId), eq(users.isActive, true)))
     .limit(1);
@@ -78,7 +79,7 @@ async function resolveSession(
     return;
   }
 
-  request.authUser = { id: session.userId, sessionId: session.sessionId };
+  request.authUser = { id: session.userId, sessionId: session.sessionId, role: user[0].role };
 }
 
 export const authPlugin = fp(async (app: FastifyInstance) => {

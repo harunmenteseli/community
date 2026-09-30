@@ -4,6 +4,8 @@ import { POST_CATEGORY_LABELS, POST_GAME_LABELS } from '@community/shared';
 import { Avatar } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
 import { cn } from '../../lib/cn';
+import { AuthorFollowButton } from '../users/AuthorFollowButton';
+import { ReportButton } from '../reports/ReportButton';
 import { ReactionButtons } from './ReactionButtons';
 import type { Post } from './api';
 
@@ -76,6 +78,16 @@ export function PostCard({ post }: PostCardProps) {
               </Badge>
             ) : null}
           </div>
+        </div>
+
+        {/* Kart aksiyonlari: yazari takip et + gonderiyi sikayet et. */}
+        <div className="flex shrink-0 items-center gap-1">
+          <AuthorFollowButton post={post} />
+          <ReportButton
+            targetType="post"
+            targetId={post.id}
+            subject={post.title || `${post.author.name} gönderisi`}
+          />
         </div>
       </header>
 

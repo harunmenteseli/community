@@ -8,6 +8,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { userAtom } from '../state/atoms';
 import { usersApi } from '../features/users/api';
 import { useFollow } from '../features/users/useFollow';
+import { ReportButton } from '../features/reports/ReportButton';
 
 function joinDate(iso: string): string {
   const date = new Date(iso);
@@ -124,6 +125,9 @@ export function ProfilePage() {
                 Giriş yap
               </Link>
             )}
+            {user && !data.isSelf ? (
+              <ReportButton targetType="user" targetId={data.user.id} subject={data.user.username} />
+            ) : null}
           </div>
         </div>
 

@@ -151,6 +151,37 @@ test.describe('feed arayuzu', () => {
     await expect(page.getByRole('heading', { name: /yorumlar/i })).toBeVisible();
   });
 
+  test('post kartindan yazari takip et ve birak', async ({ page, api }) => {
+    const author = await createAccount(api, 'yazar');
+    const follower = await createAccount(api, 'takipci');
+    const marker = `kart takibi ${Date.now()}`;
+    await createPost(api, author, { content: marker, category: 'genel', title: `Kart ${marker}` });
+
+    await signInViaUi(page, follower);
+    await page.goto('/feed');
+
+    const card = page.getByRole('article').filter({ hasText: `Kart ${marker}` });
+    const followButton = card.getByRole('button', { name: `Takip et: @${author.username}` });
+    await expect(followButton).toBeVisible();
+    await followButton.click();
+
+    // Optimistic: dugme aninda "Takiptesin" oluyor, sunucu istegi bitmeden once.
+    await expect(card.getByRole('button', { name: `Takipten çık: @${author.username}` })).toBeVisible();
+
+    const check = await api.get(`/api/users/${author.username}`, {
+      headers: { Authorization: `Bearer ${follower.token}` },
+    });
+    expect(((await check.json()) as { isFollowing: boolean }).isFollowing).toBe(true);
+
+    await card.getByRole('button', { name: `Takipten çık: @${author.username}` }).click();
+    await expect(card.getByRole('button', { name: `Takip et: @${author.username}` })).toBeVisible();
+
+    const after = await api.get(`/api/users/${author.username}`, {
+      headers: { Authorization: `Bearer ${follower.token}` },
+    });
+    expect(((await after.json()) as { isFollowing: boolean }).isFollowing).toBe(false);
+  });
+
   test('olmayan post detay sayfasi 404 durumu gosterir', async ({ page }) => {
     await page.goto('/post/550e8400-e29b-41d4-a716-446655440000');
 
