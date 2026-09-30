@@ -92,15 +92,39 @@ export function PostCard({ post }: PostCardProps) {
 
       {post.poll ? (
         <div className="mt-3 rounded-lg border border-ink-200 p-3 dark:border-ink-800">
-          <p className="text-sm font-medium">{post.poll.question}</p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-medium">{post.poll.question}</p>
+            {post.poll.closed ? (
+              <span className="shrink-0 text-xs text-ink-500 dark:text-ink-400">Kapandı</span>
+            ) : null}
+          </div>
+          <p className="mt-1 text-xs text-ink-500 dark:text-ink-400">
+            {post.poll.totalVotes > 0 ? `${post.poll.totalVotes} oy` : 'Henüz oy yok'}
+          </p>
           <ul className="mt-2 flex flex-col gap-1.5">
-            {post.poll.options.map((option) => (
-              <li key={option.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="truncate">{option.text}</span>
-                <span className="shrink-0 text-ink-500 dark:text-ink-400">{option.percentage}%</span>
-              </li>
-            ))}
+            {post.poll.options.map((option) => {
+              const isMine = post.poll?.myVote === option.id;
+              return (
+                <li key={option.id} className="flex items-center justify-between gap-3 text-sm">
+                  <span className={cn('truncate', isMine && 'font-medium text-accent-600 dark:text-accent-400')}>
+                    {option.text}
+                    {isMine ? ' (oyun)' : ''}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-ink-500 dark:text-ink-400">{option.percentage}%</span>
+                </li>
+              );
+            })}
           </ul>
+          {/* Oylama post detayinda yapilir. */}
+          {!post.poll.closed ? (
+            <Link
+              to="/post/$id"
+              params={{ id: post.id }}
+              className="mt-2 inline-block text-xs font-medium text-accent-600 hover:underline dark:text-accent-400"
+            >
+              Oy ver
+            </Link>
+          ) : null}
         </div>
       ) : null}
 

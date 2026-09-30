@@ -46,6 +46,14 @@ export interface PollWithState {
   closed: boolean;
 }
 
+/** post_polls tablosundan gelen satirin kullanilacak alanlari. */
+type PollRow = {
+  id: string;
+  question: string;
+  closesAt: Date | string | null;
+  options: { id: string; text: string }[];
+};
+
 /** postgres surucusu timestamptz degerini surume gore string ya da Date dondurur. */
 function toIso(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
@@ -130,7 +138,7 @@ export class PostsService {
       await tx
         .update(posts)
         .set({
-          title: input.title ?? undefined === undefined ? undefined : input.title ?? post.title,
+          title: input.title ?? post.title,
           content: input.content ?? post.content,
           category: input.category ?? post.category,
           game: input.game === undefined ? post.game : input.game,
@@ -303,33 +311,42 @@ export class PostsService {
 
     const found = poll[0];
     if (!found) throw errors.notFound('Anket bulunamadı');
-    if (found.closesAt && found.closesAt < new Date()) throw errors.badRequest('Anket kapalı');
+    if (found.closesAt && new Date(found.closesAt) < new Date()) throw errors.badRequest('Anket kapalı');
 
     const option = found.options.find((o) => o.id === optionId);
     if (!option) throw errors.badRequest('Geçersiz seçenek');
 
-    const alreadyVoted = await this.db
-      .select({ id: pollVotes.id })
+    const existing = await this.db
+      .select({ id: pollVotes.id, optionId: pollVotes.optionId })
       .from(pollVotes)
       .where(and(eq(pollVotes.pollId, found.id), eq(pollVotes.voterId, userId)))
       .limit(1);
 
-    if (alreadyVoted[0]) {
-      await this.db.delete(pollVotes).where(eq(pollVotes.id, alreadyVoted[0].id));
-      await this.db.update(postPolls).set({ totalVotes: found.totalVotes - 1 }).where(eq(postPolls.id, found.id));
-    }
+    await this.db.transaction(async (tx) => {
+      const previous = existing[0];
+      if (previous && previous.optionId === optionId) {
+        // Ayni secenek: oyu geri al.
+        await tx.delete(pollVotes).where(eq(pollVotes.id, previous.id));
+      } else if (previous) {
+        // Farkli secenek: oyu tasi (kullanici basina tek oy).
+        await tx.update(pollVotes).set({ optionId }).where(eq(pollVotes.id, previous.id));
+      } else {
+        await tx.insert(pollVotes).values({ pollId: found.id, optionId, voterId: userId });
+      }
 
-    await this.db.insert(pollVotes).values({ pollId: found.id, optionId, voterId: userId });
-    await this.db.update(postPolls).set({ totalVotes: found.totalVotes + 1 }).where(eq(postPolls.id, found.id));
+      // Sayacı oy kayıtlarından yeniden hesapla; +/-1 aritmetiği kayabiliyor.
+      const counted = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(pollVotes)
+        .where(eq(pollVotes.pollId, found.id));
+      await tx.update(postPolls).set({ totalVotes: Number(counted[0]?.count ?? 0) }).where(eq(postPolls.id, found.id));
+    });
 
-    return this.loadPoll(found.id, userId, found.options);
+    return this.loadPoll(found, userId);
   }
 
-  private async loadPoll(
-    pollId: string,
-    viewerId: string | undefined,
-    options: { id: string; text: string }[],
-  ): Promise<PollWithState> {
+  private async loadPoll(found: PollRow, viewerId: string | undefined): Promise<PollWithState> {
+    const pollId = found.id;
     const votes = await this.db.select({ optionId: pollVotes.optionId }).from(pollVotes).where(eq(pollVotes.pollId, pollId));
     const myVoteId = viewerId
       ? (
@@ -347,11 +364,11 @@ export class PostsService {
 
     return {
       id: pollId,
-      question: '',
+      question: found.question,
       totalVotes,
       myVote: myVoteId,
-      closed: false,
-      options: options.map((o) => ({
+      closed: Boolean(found.closesAt && new Date(found.closesAt) < new Date()),
+      options: found.options.map((o) => ({
         id: o.id,
         text: o.text,
         votes: optionCounts.get(o.id) ?? 0,
@@ -412,11 +429,7 @@ export class PostsService {
     const poll = await this.db.select().from(postPolls).where(eq(postPolls.postId, postId)).limit(1);
     const found = poll[0];
     if (!found) return null;
-    return {
-      ...(await this.loadPoll(found.id, viewerId, found.options)),
-      question: found.question,
-      closed: Boolean(found.closesAt && found.closesAt < new Date()),
-    };
+    return this.loadPoll(found, viewerId);
   }
 }
 

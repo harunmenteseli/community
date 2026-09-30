@@ -10,6 +10,7 @@ import { ApiError } from '../lib/api';
 import { postsApi, type StoredFile } from '../features/posts/api';
 import { TipTapEditor } from '../features/editor/TipTapEditor';
 import { ImageAttachments } from '../features/editor/ImageAttachments';
+import { PollEditor, pollDraftError, toPollDto, type PollDraft } from '../features/posts/PollEditor';
 import { toast } from 'sonner';
 import { cn } from '../lib/cn';
 
@@ -29,6 +30,7 @@ export function NewPostPage() {
   const [category, setCategory] = useState<PostCategory>('genel');
   const [game, setGame] = useState<PostGame | null>(null);
   const [images, setImages] = useState<StoredFile[]>([]);
+  const [poll, setPoll] = useState<PollDraft | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -41,6 +43,7 @@ export function NewPostPage() {
   const categoryRef = useRef(category);
   const gameRef = useRef(game);
   const imagesRef = useRef(images);
+  const pollRef = useRef(poll);
   const draftIdRef = useRef(draftId);
   const publishingRef = useRef(false);
   titleRef.current = title;
@@ -48,6 +51,7 @@ export function NewPostPage() {
   categoryRef.current = category;
   gameRef.current = game;
   imagesRef.current = images;
+  pollRef.current = poll;
   draftIdRef.current = draftId;
 
   const draftIdParam = useMemo(() => new URLSearchParams(location.searchStr ?? '').get('id'), [location.searchStr]);
@@ -68,6 +72,11 @@ export function NewPostPage() {
         setCategory(draft.category);
         setGame(draft.game);
         setImages(draft.images.map((i) => ({ url: i.url, width: i.width, height: i.height })));
+        setPoll(
+          draft.poll
+            ? { question: draft.poll.question, options: draft.poll.options.map((o) => o.text) }
+            : null,
+        );
         setDraftId(draft.id);
       })
       .catch((err) => {
@@ -88,6 +97,7 @@ export function NewPostPage() {
       setSaveStatus('idle');
       return;
     }
+    const pollPayload = toPollDto(pollRef.current);
     setSaveStatus('saving');
     const payload = {
       title: t || undefined,
@@ -105,6 +115,8 @@ export function NewPostPage() {
           category: payload.category,
           game: payload.game,
           images: payload.images,
+          // Anket sadece gecerliyse gonderilir; yarim anket taslagi bozmaz.
+          ...(pollPayload ? { poll: pollPayload } : {}),
         });
       } else {
         const { post } = await postsApi.create(payload);
@@ -119,7 +131,7 @@ export function NewPostPage() {
     }
   }, []);
 
-  const signature = `${title}|${content}|${category}|${game}|${images.map((i) => i.url).join(',')}`;
+  const signature = `${title}|${content}|${category}|${game}|${images.map((i) => i.url).join(',')}|${poll?.question ?? ''}|${(poll?.options ?? []).join(',')}`;
 
   useEffect(() => {
     if (publishingRef.current || loadingDraft) return;
@@ -136,6 +148,11 @@ export function NewPostPage() {
     publishingRef.current = true;
     setPublishing(true);
     try {
+      const pollError = pollDraftError(pollRef.current);
+      if (pollError) {
+        toast.error(pollError);
+        return;
+      }
       const body = {
         content: contentRef.current,
         category: categoryRef.current,
@@ -143,6 +160,7 @@ export function NewPostPage() {
         title: titleRef.current.trim() || undefined,
         images: imagesRef.current.map((i) => i.url),
         isDraft: false,
+        ...(toPollDto(pollRef.current) ? { poll: toPollDto(pollRef.current) } : {}),
       };
       if (!stripHtml(body.content) && !body.title) {
         toast.error('Yayınlamak için içerik gerekli');
@@ -158,7 +176,7 @@ export function NewPostPage() {
       }
       toast.success('Paylaşıldı!');
       setShareOpen(false);
-      await navigate({ to: '/' });
+      await navigate({ to: '/feed' });
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Yayınlanamadı');
     } finally {
@@ -303,10 +321,13 @@ export function NewPostPage() {
 
         <ImageAttachments images={images} onChange={setImages} disabled={publishing} />
 
+        <PollEditor value={poll} onChange={setPoll} disabled={publishing} />
+
         <div className="flex items-center justify-between gap-3 border-t border-ink-200 pt-4 dark:border-ink-800">
           <div className="flex items-center gap-4 text-xs text-ink-400 dark:text-ink-500">
             <span>{charCount.toLocaleString('tr-TR')} karakter</span>
             <span>{images.length}/5 görsel</span>
+            {poll ? <span>{poll.options.filter((o) => o.trim()).length} anket seçeneği</span> : null}
           </div>
           <Button size="lg" onClick={() => setShareOpen(true)} disabled={publishing}>
             <UploadCloud className="h-4 w-4" />
@@ -362,6 +383,26 @@ export function NewPostPage() {
                 <img key={image.url} src={image.url} alt="" className="aspect-square w-full rounded-lg object-cover" />
               ))}
             </div>
+          ) : null}
+          {poll && !pollDraftError(poll) ? (
+            <div className="rounded-lg border border-ink-200 px-3 py-2.5 dark:border-ink-800">
+              <p className="text-sm font-medium">{poll.question.trim()}</p>
+              <ul className="mt-2 flex flex-col gap-1">
+                {poll.options
+                  .filter((o) => o.trim())
+                  .map((option, index) => (
+                    <li key={index} className="flex items-center gap-2 text-sm text-ink-600 dark:text-ink-300">
+                      <span aria-hidden className="h-2.5 w-2.5 rounded-full border border-ink-300 dark:border-ink-600" />
+                      {option.trim()}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          ) : null}
+          {pollDraftError(poll) ? (
+            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+              {pollDraftError(poll)}
+            </p>
           ) : null}
         </div>
       </Modal>

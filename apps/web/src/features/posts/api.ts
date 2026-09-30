@@ -64,6 +64,9 @@ export const postsApi = {
     http.patch<{ success: true }>(`/api/posts/${id}`, updatePostSchema.parse(input)),
   delete: (id: string) => http.delete<{ success: true }>(`/api/posts/${id}`),
   get: (id: string) => http.get<{ post: Post }>(`/api/posts/${id}`),
+  // Ayni secenege tekrar oy vermek oyu geri alir; baska secenek oyu tasiyir.
+  voteOnPoll: (postId: string, optionId: string) =>
+    http.post<{ poll: PostPoll }>(`/api/posts/${postId}/poll/vote`, { optionId }),
   drafts: () => http.get<{ posts: Post[] }>('/api/me/drafts'),
   uploadImage: async (file: File): Promise<StoredFile> => {
     const form = new FormData();

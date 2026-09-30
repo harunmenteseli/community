@@ -11,6 +11,7 @@ import { Spinner } from '../components/ui/spinner';
 import { cn } from '../lib/cn';
 import { postsApi } from '../features/posts/api';
 import { CommentSection } from '../features/posts/CommentSection';
+import { PollBox } from '../features/posts/PollBox';
 import { timeAgo } from '../features/posts/PostCard';
 
 export function PostDetailPage() {
@@ -104,21 +105,7 @@ export function PostDetailPage() {
             </ul>
           ) : null}
 
-          {post.poll ? (
-            <div className="mt-4 rounded-lg border border-ink-200 p-3 dark:border-ink-800">
-              <p className="text-sm font-medium">{post.poll.question}</p>
-              <p className="mt-1 text-xs text-ink-500 dark:text-ink-400">{post.poll.totalVotes} oy</p>
-              {/* Oylama arayuzu #4 icin ayrilmistir. */}
-              <ul className="mt-2 flex flex-col gap-1.5">
-                {post.poll.options.map((option) => (
-                  <li key={option.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate">{option.text}</span>
-                    <span className="shrink-0 text-ink-500 dark:text-ink-400">{option.percentage}%</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+          {post.poll ? <PollBox postId={post.id} poll={post.poll} /> : null}
 
           <footer className="mt-4 flex items-center gap-4 text-sm text-ink-500 dark:text-ink-400">
             {/* Begenme/kaydetme butonlari #6 kapsaminda; simdilik yalnizca sayaclar. */}

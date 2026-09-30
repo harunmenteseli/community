@@ -85,6 +85,12 @@
 > Güncellenecek. Her tamamlanan issue buraya `#id ✔` eklenir.
 
 - [x] S-0 tamamlandı — repo init, monorepo, API çekirdeği, design system temeli, smoke test
+- [x] #1 ✔ Web auth akışı — TanStack Query mutation, redirect, guard
+- [x] #2 ✔ Session yönetimi UI — liste, revoke, revoke-all, logout düzeltmesi
+- [x] #3 ✔ Post editörü — görsel, kategori/oyun etiketi, draft
+- [x] #4 ✔ Anket UI — editör, sonuç görünümü, tek oy
+- [x] #5 ✔ Feed — filtreler, infinite scroll, post detay
+- [ ] #6 Like/bookmark + optimistic UI (sıradaki)
 
 ## 2026-09-22 — Durum (S-0 tamamlandı, smoke test geçti)
 
@@ -266,3 +272,64 @@ ull
 
 - check.bat yesil (typecheck + lint + build), 67 unit test ve 30 e2e test gecti.
 - Commit: #5. Siradaki: #6 (like/bookmark + optimistic UI).
+
+## 2026-09-30 — Durum (#1, #2 ve #4 tamamlandi)
+
+### #1 Web auth akisi
+
+- Login/Register/VerifyEmail/ForgotPassword/ResetPassword sayfalari kendi
+  `useState` + elle `try/catch` akislarini birakti; artik TanStack Query
+  `useMutation` kullaniyor (loading/error istenen durumlar mutation state'inden).
+- `useRedirectTarget` eklendi: `/login?redirect=/post/yeni` ile giris sonrasi
+  istenen sayfaya donuluyor, varsayilan `/feed`. `//evil.com` gibi degerler
+  reddediliyor (open redirect korumasi).
+- Korumali sayfalar (`/post/yeni`, `/taslaklar`, `/settings/security`) giris
+  cagrisina kendi `redirect` degerini ekliyor.
+- Dogrulama: `/verify-email` artik mount'ta tek seferde calisan bir mutation;
+  onceki `useEffect` + `active` bayragi yerine `retry: false` kullaniliyor.
+
+### #2 Session yonetimi
+
+- `SecurityPage` session listesini `useQuery`, revoke/revoke-all islemlerini
+  `useMutation` ile yonetiyor; liste degisimi `invalidateQueries` ile.
+- **Bulunan gercek hata:** `Header.onLogout` once `clearSession()` cagirip
+  sonra `authApi.logout()` atiyordu. Token localStorage'dan silinince istek
+  `Authorization` basligi olmadan gidiyor, sunucu oturumu kapatmiyordu ve o
+  oturum guvenlik sayfasinda aktif kalmaya devam ediyordu. Sira degistirildi:
+  once sunucuya bildir, sonra yerel oturumu temizle.
+
+### #4 Anket UI
+
+- Editor: `PollEditor` (soru zorunlu, 2-10 secenek, ekle/kaldir, canli hata
+  mesaji). Anket hem otomatik taslak kaydina hem yayinlamaya gidiyor; yarim
+  anket taslagi bozmuyor (`toPollDto` gecersizse `undefined` doner).
+- Sonuc gorunumu: `PollBox` yuzde dolgusu, toplam oy, "(oyun)" isareti, kapali
+  anket kilit rozeti ve tek-oy ipucu. Oylamadan sonra post detayi invalidate
+  ediliyor, yarista gelen cevaplara karsi sunucu gercegi esas aliniyor.
+- Feed karti artik toplam oy, kendi oyunu ve "Oy ver" cagrisi gosteriyor.
+- **Bulunan gercek hata (backend):** `voteOnPoll` toggle mantigi bozuktu.
+  Kullanici ayni secenek tekrar basinca oy siliniyor, sonra `found.totalVotes
+  - 1` ve `+1` ile ayni oy yeniden ekleniyordu; yani oyun geri alinamiyordu.
+  Artik uc dal var: ayni secenege tekrar bas -> oyu geri al, farkli secenek ->
+  oyu tasi (toplam degismez), oy yok -> ekle. Toplam sayac `+/-1` yerine
+  `poll_votes` sayilarak yeniden hesaplaniyor.
+- **Bulunan gercek hata (backend):** `loadPoll` `question: ''` ve
+  `closed: false` donuyordu; oy sonrasi UI'da anket sorusu ve kapali bilgisi
+  kayboluyordu. Artik poll satirinin tamamini aliyor.
+- **Bulunan gercek hata (backend):** `update` icinde
+  `input.title ?? undefined === undefined ? undefined : ...` operator onceligi
+  hatasi tiydu; hicbir zaman false olmadigi icin `title` her zaman `undefined`
+  gidiyordu, yani taslak basligi hicbir zaman guncellenmiyordu.
+
+### Dogrulama
+
+- Yeni testler: auth sayfalari ve redirect (8), oturum yonetimi (5), anket
+  (11 UI + API), `PollEditor` unit testleri (9).
+- Playwright tuzagi: `getByRole({ name })` alt-dize eslestiriyor; "Diğerlerini
+  kapat" butonu "Kapat" ile cakisiyordu. Buton adlarinda `exact: true`
+  kullanilmali.
+
+### Sonuc
+
+- check.bat yesil (typecheck + lint + build), 76 unit test ve 52 e2e test gecti.
+- Commit: #1, #2, #4. Siradaki: #6 (like/bookmark + optimistic UI).
