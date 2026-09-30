@@ -12,6 +12,7 @@ import { cn } from '../lib/cn';
 import { postsApi } from '../features/posts/api';
 import { CommentSection } from '../features/posts/CommentSection';
 import { PollBox } from '../features/posts/PollBox';
+import { ReactionButtons } from '../features/posts/ReactionButtons';
 import { timeAgo } from '../features/posts/PostCard';
 
 export function PostDetailPage() {
@@ -108,15 +109,14 @@ export function PostDetailPage() {
           {post.poll ? <PollBox postId={post.id} poll={post.poll} /> : null}
 
           <footer className="mt-4 flex items-center gap-4 text-sm text-ink-500 dark:text-ink-400">
-            {/* Begenme/kaydetme butonlari #6 kapsaminda; simdilik yalnizca sayaclar. */}
-            <span className="flex items-center gap-1.5" aria-label="Begenme sayisi">
-              <span aria-hidden>{post.likedByMe ? '♥' : '♡'}</span>
-              {post.likeCount > 0 ? post.likeCount : 'Beğen'}
-            </span>
-            <span className="flex items-center gap-1.5" aria-label="Kaydetme sayisi">
-              <span aria-hidden>{post.bookmarkedByMe ? '★' : '☆'}</span>
-              {post.bookmarkCount > 0 ? post.bookmarkCount : 'Kaydet'}
-            </span>
+            <ReactionButtons
+              postId={post.id}
+              likedByMe={post.likedByMe}
+              likeCount={post.likeCount}
+              bookmarkedByMe={post.bookmarkedByMe}
+              bookmarkCount={post.bookmarkCount}
+              alwaysShowCounts
+            />
             <span className="ml-auto flex items-center gap-1.5">
               <span aria-hidden>{post.commentCount}</span> yorum
             </span>

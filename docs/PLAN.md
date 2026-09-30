@@ -333,3 +333,41 @@ ull
 
 - check.bat yesil (typecheck + lint + build), 76 unit test ve 52 e2e test gecti.
 - Commit: #1, #2, #4. Siradaki: #6 (like/bookmark + optimistic UI).
+
+## 2026-09-30 — Durum (#6 tamamlandi)
+
+### #6 Post etkilesimleri: like/bookmark + optimistic UI
+
+- `ReactionButtons` (kart + detay ortak): kalp ve kaydetme butonlari
+  `aria-pressed` ile durum bildiriyor, sayilar `tabular-nums` ile hizali;
+  detayda sayilar her zaman gorunuyor, kartta 0 iken gizleniyor. Butonlar
+  karta bagli degil, yalnizca `Link` yorum baglantisi karta.
+- `usePostReaction`: `onMutate` icinde once UI guncelleniyor (optimistic),
+  istek basarisiz olursa `onMutate`'ten saklanan `['post', id]` ve tum
+  `['feed', ...]` infinity cache'leri `onError`'da eski haline donuyor ve
+  `toast.error` ile bildiriliyor. `onSuccess` sunucudan gelen mutlak degeri
+  (`{ liked }` / `{ bookmarked }`) uyguluyor; yarista basilan buton durumu
+  kaybolmuyor.
+- Ayni post `['feed']` icinde birden fazla sayfada geciyorsa hepsi guncelleniyor
+  (`patchFeedCache`), detay sayfasi ayni anda `['post', id]` cache'ini kullaniyor.
+- Oturumsuz kullanici begenince sayfa yenilenmiyor; `?redirect=` korumali sekilde
+  `/login` sayfasina gonderiliyor (post yolu korunuyor).
+- Kategori/oyun/AI rozetleri `PostCard`'da zaten vardi, degisiklik yapilmadi.
+
+### Dogrulama
+
+- Yeni testler: `reactions` unit (14) ve `e2e/reactions.spec.ts` (10): artirma/
+  azaltma, kaydetme, feed karti ile detayin esitlenmesi, oturumsuz yonlendirme,
+  rollback, iki kullanicinin toplami, kendine bildirim olusmamasi, API 401/404
+  ve post cevabindaki `likedByMe/bookmarkedByMe` yansimasi.
+- Rollback testi ilk yazimda yaritti: hata cevabi aninda dondugu icin optimistic
+  durum gozlenemeden rollback oluyordu. Artik `page.route` cevabi bir `Promise`
+  kapisi bekletiyor, boylece optimistic durum kesin goruluyor.
+- Build `tsc --noEmit` `noUncheckedIndexedAccess` ile testlerden katı: testlerde
+  `pages[0]` erisimleri opsiyonel zincirle yazildi.
+
+### Sonuc
+
+- check.bat yesil (typecheck + lint + build), 90 unit test (29 shared + 25 api +
+  36 web) ve 62 e2e test gecti.
+- Commit: #6. Siradaki: #7 (profil rotasi).

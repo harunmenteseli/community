@@ -4,6 +4,7 @@ import { POST_CATEGORY_LABELS, POST_GAME_LABELS } from '@community/shared';
 import { Avatar } from '../../components/ui/avatar';
 import { Badge } from '../../components/ui/badge';
 import { cn } from '../../lib/cn';
+import { ReactionButtons } from './ReactionButtons';
 import type { Post } from './api';
 
 export interface PostCardProps {
@@ -129,11 +130,13 @@ export function PostCard({ post }: PostCardProps) {
       ) : null}
 
       <footer className="mt-3 flex items-center gap-4 text-sm text-ink-500 dark:text-ink-400">
-        {/* Begenme/kaydetme aksiyonlari #6 kapsaminda; simdilik yalnizca sayaclar. */}
-        <span className="flex items-center gap-1.5" aria-label="Begenme sayisi">
-          <span aria-hidden>{post.likedByMe ? '♥' : '♡'}</span>
-          {post.likeCount > 0 ? post.likeCount : ''}
-        </span>
+        <ReactionButtons
+          postId={post.id}
+          likedByMe={post.likedByMe}
+          likeCount={post.likeCount}
+          bookmarkedByMe={post.bookmarkedByMe}
+          bookmarkCount={post.bookmarkCount}
+        />
 
         <Link
           to="/post/$id"
@@ -144,13 +147,6 @@ export function PostCard({ post }: PostCardProps) {
           <span className="sr-only">Yorumlar</span>
           {post.commentCount > 0 ? post.commentCount : ''}
         </Link>
-
-        {post.bookmarkCount > 0 ? (
-          <span className="ml-auto flex items-center gap-1.5" aria-label="Kaydetme sayisi">
-            <span aria-hidden>☆</span>
-            {post.bookmarkCount}
-          </span>
-        ) : null}
       </footer>
     </article>
   );
