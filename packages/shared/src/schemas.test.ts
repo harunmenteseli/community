@@ -7,6 +7,7 @@ import {
   POST_GAME_LABELS,
   createCommentSchema,
   createPostSchema,
+  feedParamsSchema,
   loginSchema,
   registerSchema,
   updatePostSchema,
@@ -131,5 +132,46 @@ describe('createCommentSchema', () => {
     const postId = '550e8400-e29b-41d4-a716-446655440000';
 
     expect(createCommentSchema.safeParse({ postId, content: '   ' }).success).toBe(false);
+  });
+});
+
+describe('feedParamsSchema', () => {
+  it('varsayilanlari uygular', () => {
+    expect(feedParamsSchema.parse({})).toEqual({ filter: 'yeni', limit: 20 });
+  });
+
+  it('gecerli filtre degerlerini kabul eder', () => {
+    for (const filter of ['yeni', 'trend', 'takip'] as const) {
+      expect(feedParamsSchema.safeParse({ filter }).success).toBe(true);
+    }
+  });
+
+  it('gecersiz filtreyi reddeder', () => {
+    expect(feedParamsSchema.safeParse({ filter: 'populer' }).success).toBe(false);
+  });
+
+  it('limit degerini string olarak kabul edip sayiya cevirir', () => {
+    expect(feedParamsSchema.parse({ limit: '10' }).limit).toBe(10);
+  });
+
+  it('limit sinirlarini uygular', () => {
+    expect(feedParamsSchema.safeParse({ limit: 0 }).success).toBe(false);
+    expect(feedParamsSchema.safeParse({ limit: 51 }).success).toBe(false);
+  });
+
+  it('gecerli kategori ve oyun filtrelerini kabul eder', () => {
+    const parsed = feedParamsSchema.parse({ category: 'soru', game: 'ea-fc' });
+
+    expect(parsed.category).toBe('soru');
+    expect(parsed.game).toBe('ea-fc');
+  });
+
+  it('kategori ve oyun filtrelerini reddeder', () => {
+    expect(feedParamsSchema.safeParse({ category: 'bilinmeyen' }).success).toBe(false);
+    expect(feedParamsSchema.safeParse({ game: 'fifa' }).success).toBe(false);
+  });
+
+  it('cursor degerini oldugunda korur', () => {
+    expect(feedParamsSchema.parse({ cursor: 'abc' }).cursor).toBe('abc');
   });
 });

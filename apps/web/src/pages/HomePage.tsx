@@ -22,10 +22,12 @@ export function HomePage() {
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
         {user ? (
-          <Button size="lg">
-            Devam et
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          <Link to="/feed">
+            <Button size="lg">
+              Devam et
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
         ) : (
           <>
             <Link to="/register">
@@ -41,6 +43,12 @@ export function HomePage() {
             </Link>
           </>
         )}
+        <Link to="/feed">
+          <Button size="lg" variant="ghost">
+            Feed&apos;i gez
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
       </div>
     </div>
   );

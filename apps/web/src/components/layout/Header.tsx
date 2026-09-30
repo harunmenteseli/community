@@ -38,12 +38,17 @@ export function Header() {
         </Link>
 
         <nav className="flex items-center gap-2">
+          <Link to="/feed" className="hidden text-sm font-medium hover:underline sm:inline">
+            Feed
+          </Link>
           {user ? (
             <>
-              <Button variant="outline" size="sm" onClick={() => navigate({ to: '/' })}>
-                <PenSquare className="h-4 w-4" />
-                Yeni Post
-              </Button>
+              <Link to="/post/yeni">
+                <Button variant="outline" size="sm">
+                  <PenSquare className="h-4 w-4" />
+                  Yeni Post
+                </Button>
+              </Link>
               <Avatar
                 src={user.avatarUrl ?? undefined}
                 name={user.name}

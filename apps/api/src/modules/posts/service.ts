@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, sql, type SQL } from 'drizzle-orm';
 import type { DB } from '../../db';
 import { db } from '../../db';
 import {
@@ -10,7 +10,7 @@ import {
   bookmarks,
 } from '../../db/schema';
 import type { CreatePostDto, UpdatePostDto } from '@community/shared';
-import type { POST_CATEGORIES, POST_GAMES } from '@community/shared';
+import type { PostCategory, PostGame } from '@community/shared';
 import { POST_CONTENT_MAX } from '@community/shared';
 import { errors } from '../../lib/errors';
 import { events } from '../../lib/events';
@@ -21,11 +21,11 @@ export interface PostWithMeta {
   id: string;
   title: string | null;
   content: string;
-  category: (typeof POST_CATEGORIES)[number];
-  game: (typeof POST_GAMES)[number] | null;
+  category: PostCategory;
+  game: PostGame | null;
   source: 'human' | 'ai';
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
   author: { id: string; username: string; name: string; avatarUrl: string | null };
   likeCount: number;
   commentCount: number;
@@ -46,7 +46,30 @@ export interface PollWithState {
   closed: boolean;
 }
 
-function feedBaseSql(viewerId: string, opts?: { includeOwnDrafts?: boolean }) {
+/** postgres surucusu timestamptz degerini surume gore string ya da Date dondurur. */
+function toIso(value: Date | string): string {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
+export interface FeedFilters {
+  category?: PostCategory | null;
+  game?: PostGame | null;
+}
+
+function feedBaseSql(viewerId: string | undefined, opts?: { includeOwnDrafts?: boolean } & FeedFilters) {
+  // Oturum yoksa null gonderilir: uuid parametresi bos string olamaz ve
+  // EXISTS(... = NULL) false donerek "benden bir sey yok" sonucunu dogru uretir.
+  const viewer = viewerId ?? null;
+
+  const draftClause = opts?.includeOwnDrafts
+    ? sql`(p.is_draft = false OR p.author_id = ${viewer})`
+    : sql`p.is_draft = false`;
+
+  const clauses: SQL[] = [draftClause];
+
+  if (opts?.category) clauses.push(sql`p.category = ${opts.category}`);
+  if (opts?.game) clauses.push(sql`p.game = ${opts.game}`);
+
   return sql`
     SELECT
       p.id, p.title, p.content, p.category, p.game, p.source, p.created_at, p.updated_at,
@@ -54,12 +77,12 @@ function feedBaseSql(viewerId: string, opts?: { includeOwnDrafts?: boolean }) {
       (SELECT count(*) FROM post_likes l WHERE l.post_id = p.id) AS like_count,
       (SELECT count(*) FROM comments c WHERE c.post_id = p.id) AS comment_count,
       (SELECT count(*) FROM bookmarks b WHERE b.post_id = p.id) AS bookmark_count,
-      EXISTS(SELECT 1 FROM post_likes ml WHERE ml.post_id = p.id AND ml.user_id = ${viewerId}) AS liked_by_me,
-      EXISTS(SELECT 1 FROM bookmarks mb WHERE mb.post_id = p.id AND mb.user_id = ${viewerId}) AS bookmarked_by_me,
-      EXISTS(SELECT 1 FROM follows f WHERE f.follower_id = ${viewerId} AND f.following_id = p.author_id) AS followed_by_me
+      EXISTS(SELECT 1 FROM post_likes ml WHERE ml.post_id = p.id AND ml.user_id = ${viewer}) AS liked_by_me,
+      EXISTS(SELECT 1 FROM bookmarks mb WHERE mb.post_id = p.id AND mb.user_id = ${viewer}) AS bookmarked_by_me,
+      EXISTS(SELECT 1 FROM follows f WHERE f.follower_id = ${viewer} AND f.following_id = p.author_id) AS followed_by_me
     FROM posts p
     JOIN users u ON u.id = p.author_id
-    ${opts?.includeOwnDrafts ? sql`WHERE (p.is_draft = false OR p.author_id = ${viewerId})` : sql`WHERE p.is_draft = false`}
+    WHERE ${sql.join(clauses, sql` AND `)}
   `;
 }
 
@@ -144,7 +167,7 @@ export class PostsService {
 
   async getById(postId: string, viewerId?: string): Promise<PostWithMeta> {
     const rows = await this.db.execute<PostWithMetaRow>(sql`
-      ${feedBaseSql(viewerId ?? '', { includeOwnDrafts: Boolean(viewerId) })}
+      ${feedBaseSql(viewerId, { includeOwnDrafts: Boolean(viewerId) })}
       AND p.id = ${postId}
       LIMIT 1
     `);
@@ -162,9 +185,15 @@ export class PostsService {
     return Promise.all(rows.map((r) => this.toPostWithMeta(r, r.id, userId)));
   }
 
-  async feed(viewerId: string | undefined, filter: 'yeni' | 'trend' | 'takip', cursor?: string, limit = 20) {
+  async feed(
+    viewerId: string | undefined,
+    filter: 'yeni' | 'trend' | 'takip',
+    cursor?: string,
+    limit = 20,
+    filters: FeedFilters = {},
+  ) {
     const take = Math.min(Math.max(limit, 1), 50);
-    const base = feedBaseSql(viewerId ?? '');
+    const base = feedBaseSql(viewerId, filters);
     let rows: PostWithMetaRow[];
 
     if (filter === 'trend') {
@@ -217,7 +246,7 @@ export class PostsService {
       posts: await Promise.all(page.map((r) => this.toPostWithMeta(r, r.id, viewerId))),
       nextCursor:
         hasMore && last
-          ? Buffer.from(JSON.stringify({ createdAt: last.created_at.toISOString(), id: last.id })).toString('base64url')
+          ? Buffer.from(JSON.stringify({ createdAt: toIso(last.created_at), id: last.id })).toString('base64url')
           : null,
     };
   }
@@ -360,8 +389,8 @@ export class PostsService {
       category: row.category,
       game: row.game ?? null,
       source: row.source,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
+      createdAt: toIso(row.created_at),
+      updatedAt: toIso(row.updated_at),
       author: {
         id: row.author_id,
         username: row.username,

@@ -7,6 +7,11 @@ const WEB_URL = `http://127.0.0.1:${WEB_PORT}`;
 const apiEnv = {
   PORT: String(API_PORT),
   API_URL: `http://127.0.0.1:${API_PORT}`,
+  // CI'da bunlar job seviyesindeki env'den gelir ve child process'e miras kalir.
+  // Lokal calistirmada tanimli degilse API kendi .env dosyasini okur.
+  ...(process.env.DATABASE_URL ? { DATABASE_URL: process.env.DATABASE_URL } : {}),
+  ...(process.env.REDIS_URL ? { REDIS_URL: process.env.REDIS_URL } : {}),
+  ...(process.env.SESSION_SECRET ? { SESSION_SECRET: process.env.SESSION_SECRET } : {}),
 };
 
 const webEnv = {

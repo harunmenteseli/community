@@ -12,6 +12,7 @@ echo    Community - Veritabani Migration
 echo.
 echo    migrate.bat            bekleyen migration'lari uygular
 echo    migrate.bat generate   yeni migration dosyasi uretir
+echo    migrate.bat studio     Drizzle Studio'yu acar (baglanti yerel)
 echo  ================================================================
 
 call "%ROOT%\_common.bat" :require_pnpm
@@ -26,6 +27,7 @@ if errorlevel 1 goto :fail
 
 set "MODE=%~1"
 if /i "!MODE!"=="generate" goto :generate
+if /i "!MODE!"=="studio" goto :studio
 
 call "%ROOT%\_common.bat" :log_step "Bekleyen migration'lar uygulaniyor"
 pushd "%ROOT%"
@@ -47,6 +49,17 @@ if not "!RC!"=="0" goto :fail
 call "%ROOT%\_common.bat" :log_ok "Migration dosyalari uretildi."
 echo.
 echo   Simdi uygulamak icin: migrate.bat
+goto :done
+
+:studio
+call "%ROOT%\_common.bat" :log_step "Drizzle Studio aciliyor"
+echo   Baglanti: env dosyasindaki DATABASE_URL (docker ici postgres:5433)
+echo   Kapatmak icin Studio penceresini kapatin.
+pushd "%ROOT%"
+call pnpm.cmd db:studio
+set "RC=!ERRORLEVEL!"
+popd
+if not "!RC!"=="0" goto :fail
 goto :done
 
 :done

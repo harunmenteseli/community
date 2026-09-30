@@ -3,11 +3,12 @@ import './styles/globals.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Provider as JotaiProvider } from 'jotai';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { Toaster } from 'sonner';
 import { router } from './routes/router';
-import { bootstrapAuth } from './state/bootstrap';
+import { bootstrapAuth, store } from './state/bootstrap';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,8 +23,11 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster position="top-center" richColors closeButton />
+      {/* bootstrapAuth() bu store'a yaziyor; Provider olmadan oturum geri yukleme bilesenlere ulasmaz. */}
+      <JotaiProvider store={store}>
+        <RouterProvider router={router} />
+        <Toaster position="top-center" richColors closeButton />
+      </JotaiProvider>
     </QueryClientProvider>
   );
 }

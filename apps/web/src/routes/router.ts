@@ -10,6 +10,8 @@ import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { VerifyEmailPage } from '../features/auth/VerifyEmailPage';
 import { NewPostPage } from '../pages/NewPostPage';
 import { TaslaklarPage } from '../pages/TaslaklarPage';
+import { FeedPage } from '../pages/FeedPage';
+import { PostDetailPage } from '../pages/PostDetailPage';
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -70,6 +72,18 @@ const taslaklarRoute = createRoute({
   component: TaslaklarPage,
 });
 
+const feedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/feed',
+  component: FeedPage,
+});
+
+const postDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/post/$id',
+  component: PostDetailPage,
+});
+
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '*',
@@ -86,6 +100,8 @@ const routeTree = rootRoute.addChildren([
   securityRoute,
   newPostRoute,
   taslaklarRoute,
+  feedRoute,
+  postDetailRoute,
   notFoundRoute,
 ]);
 

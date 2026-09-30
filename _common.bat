@@ -162,20 +162,24 @@ REM ============================================================================
 
 REM Not: findstr /R ile /C birlikte kullanilamaz; sabit metin aramasi /L ile
 REM yapilir. ":<port> " ifadesi IPv6 adreslerde de eslesir.
+REM
+REM Onemli: dispatcher "goto %~1" ile atladigi icin %1 her zaman etiketin
+REM kendisidir. Tum port yardimcilari bu yuzden portu %~2'den okur. Ic cagri
+REM yapilirken de sahte bir ilk arguman verilir ("call :port_in_use none 3000").
 
 :port_in_use
 netstat -ano | findstr /L ":%~2 " | findstr /L "LISTENING" >nul 2>&1
 exit /b %ERRORLEVEL%
 
 :warn_port
-call :port_in_use none %~1
+call :port_in_use none %~2
 if errorlevel 1 exit /b %EXIT_OK%
-echo [!] Port %~1 su an kullanimda.
+echo [!] Port %~2 su an kullanimda.
 echo         Eski bir surec calisiyor olabilir. Once stop.bat calistirin.
 exit /b %EXIT_OK%
 
 :kill_port
-set "TARGET=%~1"
+set "TARGET=%~2"
 set "KILLED=0"
 for /f "tokens=5" %%I in ('netstat -ano ^| findstr /L ":!TARGET! " ^| findstr /L "LISTENING"') do (
     if not "%%I"=="0" (
@@ -185,16 +189,16 @@ for /f "tokens=5" %%I in ('netstat -ano ^| findstr /L ":!TARGET! " ^| findstr /L
     )
 )
 if "!KILLED!"=="0" (
-    echo   Port %~1 - dinleyen surec yok.
+    echo   Port %~2 - dinleyen surec yok.
     exit /b %EXIT_OK%
 )
 timeout /t 1 /nobreak >nul
-call :port_in_use none %~1
+call :port_in_use none !TARGET!
 if errorlevel 1 (
-    call :log_ok "Port %~1 serbest birakildi."
+    call :log_ok "Port !TARGET! serbest birakildi."
     exit /b %EXIT_OK%
 )
-call :log_warn "Port %~1 hala kullanimda. Islemi elle kapatin."
+call :log_warn "Port !TARGET! hala kullanimda. Islemi elle kapatin."
 exit /b %EXIT_FAIL%
 
 :wait_api

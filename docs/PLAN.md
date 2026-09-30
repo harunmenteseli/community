@@ -207,3 +207,62 @@
 - Root `package.json`a `test:e2e` ve `test:e2e:ui` script`leri eklendi.
 
 - Commit: `#16`. S-2 test altyapisi tamamlandi. Siradaki: #5 feed sayfasi.
+
+## 2026-09-30 - Durum (Feed sayfasi, #5 tamamlandi)
+
+- /feed sayfasi eklendi (pps/web/src/pages/FeedPage.tsx), router'a /feed ve
+  /post/ rotalari tanimlandi. Ana sayfaya ve header'a feed girisleri kondu.
+- PostCard, FeedFiltersBar, FeedList bilesenleri yazildi: yeni/trend/takip sekmeleri,
+  kategori ve oyun filtreleri, IntersectionObserver tabanli infinite scroll + "daha fazla
+  goster" butonu, skeleton/ bos durum / hata durumlari.
+- Post detay sayfasi (PostDetailPage) ve yorum bolumu (CommentSection) eklendi:
+  icerik, gorseller, anket ozeti, yorum listesi, yorum yazma ve kendi yorumunu silme.
+- Backend'de kategori/oyun filtresi destegi: eedParamsSchema genisletildi,
+  postsService.feed ilters parametresi aliyor, eedBaseSql WHERE blokunu
+  birlestirilecek clause listesi haline getirdi.
+- Redis trend onbellegi artik sadece filtresiz ilk "trend" sayfasinda kullaniliyor
+  (filtreli istekler yanlis veri donmesin diye).
+- 13 yeni e2e testi (e2e/feed.spec.ts): uc filtre, kategori/oyun filtresi, cursor
+  sayfalama, gecersiz parametre 400, feed arayuzu, detay sayfasi, yorum yazma.
+  Toplam e2e 17 -> 30. Unit test 59 -> 67 (shared 21 -> 29, eedParamsSchema testleri).
+- Header'daki "Yeni Post" butonu / yerine /post/yeni rotasina gider (hata duzeltildi).
+- like/ookmark butonlari bilerek kapsam disi birakildi: #6'da optimistic UI ile
+  birlikte eklenilecek. Bu commit sadece sayaclari gosteriyor.
+
+### Bu is sirasinda bulunan ve duzeltilen gercek hatalar
+
+1. **Anonim feed istegi 500 donuyordu.** eedBaseSql oturumsuz istekte iewerId olarak
+   bos string gonderiyordu; Postgres bunu uuid olarak reddediyordu. Artik 
+ull
+   gonderiliyor (EXISTS(... = NULL) false doner, dogru sonuc). /api/feed sifirsiz
+   oturumla calisiyor.
+2. **Cursor sayfalamasi sayfa 2'de patliyordu.** postgres surucusu created_at
+   degerini surume gore string donduruyor; kod created_at.toISOString() cagirinca
+   500 veriyordu, yani infinite scroll ilk sayfadan sonra calismiyordu. 	oIso()
+   yardimcisi eklendi ve createdAt/updatedAt alanlari API'de string olarak
+   donduruluyor.
+3. **Oturum geri yukleme hicbir zaman calismiyordu.** ootstrapAuth() ayri bir jotai
+   store olusturuyor ve ona yaziyordu, ama uygulama bu store'u <Provider> ile
+   React'e vermiyordu; bilesenler her zaman bos varsayilan store'u okuyordu. Sadece
+   login sirasinda yazilan user localStorage'da cache'lenmisse durum "dogru"
+   gorunuyordu. main.tsx icine jotai Provider eklendi.
+4. **Tum .bat dosyalari LF satir sonu ile yazilmis.** cmd.exe goto :etiket ve
+   call :etiket aramalarini bu dosyalarda cozemiyordu ("The system cannot find the
+   batch label specified"). Tum batch dosyalari CRLF'e cevrildi ve check.bat /
+   stop.bat uctan uca dogrulandi.
+5. **_common.bat port yardimcilari yanlis arguman okuyordu.** Dispatcher
+   goto %~1 yaptigi icin %1 her zaman etiketin kendisi; kill_port/warn_port
+   portu %~1'den okuyordu ve ekrana Port :kill_port yaziyordu. Artik %~2
+   kullaniliyor ve stop.bat gercekten portlari kapatiyor.
+6. **CI e2e job'i calisir durumda degildi.** postgres service portu 5433:5433
+   idi (container 5432'de dinliyor) ve DATABASE_URL/REDIS_URL/SESSION_SECRET
+   sadece migration adiminda scope'lu tanimliydi; Playwright'in baslattigi API child
+   process bunlari gormuyordu. Port eslemesi duzeltildi, env'ler job seviyesine
+   tasindi, playwright.config.ts de bunlari acikca child process'e aktariyor.
+7. **migrate.bat studio eksikti.** Original hedefte istenen Drizzle Studio modu
+   eklendi.
+
+### Sonuc
+
+- check.bat yesil (typecheck + lint + build), 67 unit test ve 30 e2e test gecti.
+- Commit: #5. Siradaki: #6 (like/bookmark + optimistic UI).

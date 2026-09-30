@@ -50,9 +50,9 @@ jobs:
           POSTGRES_PASSWORD: community
           POSTGRES_DB: community
         ports:
-          - 5433:5433
+          - 5433:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U community -d community"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -68,6 +68,11 @@ jobs:
     env:
       E2E_WEB_PORT: '4310'
       E2E_API_PORT: '4311'
+      # Job seviyesinde: migration adimi ve Playwright'in baslattigi API child process
+      # ayni degerleri gormeli, yoksa API env.ts dogrulanmasi basarisiz oluyor.
+      DATABASE_URL: postgres://community:community@localhost:5433/community
+      REDIS_URL: redis://localhost:6380
+      SESSION_SECRET: ci-secret-insecure-change-me-32chars!!!!!!
     steps:
       - uses: actions/checkout@v4
 
@@ -85,10 +90,6 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Migration uygula
-        env:
-          DATABASE_URL: postgres://community:community@localhost:5433/community
-          REDIS_URL: redis://localhost:6380
-          SESSION_SECRET: ci-secret-insecure-change-me-32chars!!!!!!
         run: pnpm db:migrate
 
       - name: e2e testler

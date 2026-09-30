@@ -123,6 +123,8 @@ export const feedParamsSchema = z.object({
   filter: z.enum(['yeni', 'trend', 'takip']).default('yeni'),
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
+  category: postCategorySchema.optional(),
+  game: postGameSchema.optional(),
 });
 
 export const notificationSettingsSchema = z
